@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Sampah Karangsewu - Login</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Kiri -->
+    <div class="left">
+      <a href="home.html" class="back-btn">← Kembali ke Beranda</a>
+      <div class="content">
+        <div class="logo">🌱 Bank Sampah <br><small>Desa Karangsewu</small></div>
+        <h1>Bersama Membangun Desa Hijau & Berkelanjutan</h1>
+        <p>Bergabunglah dengan komunitas peduli lingkungan. Kelola sampah dengan bijak, raih keuntungan ekonomi, dan wujudkan desa yang bersih dan sejahtera.</p>
+        <ul>
+          <li>♻️ Sistem pengelolaan sampah yang efisien</li>
+          <li>🌍 Kontribusi nyata untuk lingkungan</li>
+          <li>🤝 Komunitas yang peduli dan saling mendukung</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Kanan -->
+    <div class="right">
+      <div class="tabs">
+        <button class="tab active" onclick="showForm('login')">Masuk</button>
+        <button class="tab" onclick="showForm('register')">Daftar</button>
+      </div>
+
+      <!-- Form Login -->
+      <form id="loginForm" class="form active">
+        <h2>Selamat Datang Kembali</h2>
+        <p>Masuk ke akun Anda untuk melanjutkan</p>
+        <input type="email" placeholder="nama@email.com" required>
+        <input type="password" placeholder="Masukkan password" required>
+        <button type="submit" class="btn">Masuk</button>
+        <div class="demo">
+          <p><b>Demo credentials:</b></p>
+          <p>Admin: admin@banksampah.id / admin123</p>
+          <p>User: budi@gmail.com / budi123</p>
+        </div>
+      </form>
+
+      <!-- Form Register -->
+      <form id="registerForm" class="form">
+        <h2>Bergabung dengan Kami</h2>
+        <p>Daftarkan diri Anda untuk memulai</p>
+        <input type="text" placeholder="Nama Lengkap" required>
+        <input type="email" placeholder="nama@email.com" required>
+        <input type="text" placeholder="Telepon (Opsional)">
+        <input type="text" placeholder="Alamat (Opsional)">
+        <input type="password" placeholder="Minimal 6 karakter" required>
+        <input type="password" placeholder="Ulangi password" required>
+        <select>
+          <option>User</option>
+          <option>Admin</option>
+        </select>
+        <button type="submit" class="btn">Daftar Sekarang</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

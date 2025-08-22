@@ -1,0 +1,128 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  height: 100%;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+/* Bagian kiri */
+.left {
+  flex: 1;
+  background: linear-gradient(rgba(46,125,50,0.9), rgba(46,125,50,0.9)), url('https://picsum.photos/800/1000?green');
+  background-size: cover;
+  color: white;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.back-btn {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  margin-bottom: 40px;
+}
+
+.content {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  margin: 10px 0;
+}
+
+/* Bagian kanan */
+.right {
+  flex: 1;
+  background: #f9fbe7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabs {
+  display: flex;
+  width: 300px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: #eee;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: white;
+  border-bottom: 2px solid #2e7d32;
+}
+
+.form {
+  display: none;
+  flex-direction: column;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 300px;
+}
+
+.form.active {
+  display: flex;
+}
+
+.form h2 {
+  margin-bottom: 5px;
+}
+
+.form p {
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #555;
+}
+
+input, select {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.btn {
+  background: #2e7d32;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.demo {
+  margin-top: 15px;
+  font-size: 12px;
+  color: #555;
+}
