@@ -15,8 +15,8 @@
       <a href="#transaksi">Transaksi</a>
       <a href="#maps">Peta</a>
       <a href="#kontak">Kontak</a>
-      <a href="login.html" class="login-btn">Masuk</a>
-      <a href="register.html" class="register-btn">Daftar</a>
+      <a href="login.php" class="login-btn">Masuk</a>
+      <a href="register.php" class="register-btn">Daftar</a>
     </nav>
   </header>
 
