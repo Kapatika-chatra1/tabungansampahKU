@@ -26,7 +26,7 @@ if ($result && $result->num_rows === 1) {
 
 if ($akun) {
     if (password_verify($password, $akun['password'])) {
-        $_SESSION['id_akun'] = $akun['id_akun'];
+        $_SESSION['id_user'] = $akun['id_user'];
         $_SESSION['nama']    = $akun['nama'];
         $_SESSION['role']    = $akun['role'];
         session_write_close();

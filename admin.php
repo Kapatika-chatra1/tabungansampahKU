@@ -2,8 +2,14 @@
 session_start();
 require 'koneksi.php';
 
-// Cek apakah user sudah login dan role admin
-if (!isset($_SESSION['id_akun']) || $_SESSION['role'] !== 'admin') {
+// cek apakah sudah login
+if (!isset($_SESSION['id_user'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// cek role admin
+if ($_SESSION['role'] !== 'admin') {
     header("Location: login.php");
     exit();
 }
@@ -45,7 +51,7 @@ if (!isset($_SESSION['id_akun']) || $_SESSION['role'] !== 'admin') {
       <a href="admin.php#maps">Peta</a>
       <a href="admin.php#kontak">Kontak</a>
       
-      <?php if(isset($_SESSION['id_akun'])): ?>
+      <?php if(isset($_SESSION['id_user'])): ?>
         <div class="user-info">
           <h3><?= htmlspecialchars($_SESSION['nama']); ?></h3>
           <a href="logout.php" class="btn-logout">Keluar</a>
