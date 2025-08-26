@@ -1,17 +1,277 @@
-<?php
+    <?php
 session_start();
 require 'koneksi.php';
 
-// cek apakah sudah login
-if (!isset($_SESSION['id_user'])) {
-    header("Location: login.php");
+// pastikan hanya admin
+if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    echo json_encode(["error" => "Unauthorized"]);
     exit();
 }
 
-// cek role admin
-if ($_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
-    exit();
+// helper: harga per kg sesuai option select di HTML
+function harga_perkg(string $jenis): int {
+    $map = [
+        "Botol Plastik" => 5000,
+        "Aluminium"     => 7000,
+        "Kayu"          => 2000,
+        "Kertas"        => 3000,
+    ];
+    return $map[$jenis] ?? 0;
+}
+
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $action = $_GET['action'];
+
+    // ================= CREATE TRANSAKSI =================
+    if ($action === 'create') {
+        $nama  = trim($_POST['nama'] ?? '');
+        $jenis = trim($_POST['jenis'] ?? '');
+        $jumlah= (int) ($_POST['jumlah'] ?? 0);
+
+        if ($nama === '' || $jenis === '' || $jumlah <= 0) {
+            echo json_encode(["error" => "Data transaksi tidak lengkap atau jumlah tidak valid."]);
+            exit();
+        }
+        if (harga_perkg($jenis) === 0) {
+            echo json_encode(["error" => "Jenis sampah tidak valid."]);
+            exit();
+        }
+
+        // ambil user berdasarkan nama (sesuai implementasimu)
+        $q = $conn->prepare("SELECT id_user, no_hp, nama FROM account WHERE nama=? LIMIT 1");
+        $q->bind_param("s", $nama);
+        $q->execute();
+        $res = $q->get_result();
+        if ($res->num_rows === 0) {
+            echo json_encode(["error" => "User (nama) tidak ditemukan di account."]);
+            exit();
+        }
+        $userRow = $res->fetch_assoc();
+        $id_user = (int) $userRow['id_user'];
+        $no_hp   = $userRow['no_hp'];
+        $user_nama = $userRow['nama'];
+
+        // mulai transaksi db supaya insert transaction + update saldo atomik
+        $conn->begin_transaction();
+        try {
+            // insert ke transaction
+            $insT = $conn->prepare("INSERT INTO `transaction` (id_user, no_hp, jenis_sampah, jumlah_setoran) VALUES (?, ?, ?, ?)");
+            $insT->bind_param("issi", $id_user, $no_hp, $jenis, $jumlah);
+            $insT->execute();
+
+            // hitung nominal rupiah
+            $nominal = $jumlah * harga_perkg($jenis);
+
+            // cek saldo existing (kunci baris untuk safety jika InnoDB)
+            $cekS = $conn->prepare("SELECT id_saldo, saldo FROM saldo WHERE id_user=?");
+            $cekS->bind_param("i", $id_user);
+            $cekS->execute();
+            $resS = $cekS->get_result();
+
+            if ($resS->num_rows > 0) {
+                $rowS = $resS->fetch_assoc();
+                $newSaldo = (int)$rowS['saldo'] + $nominal;
+                $updS = $conn->prepare("UPDATE saldo SET saldo=? WHERE id_saldo=?");
+                $updS->bind_param("ii", $newSaldo, $rowS['id_saldo']);
+                $updS->execute();
+            } else {
+                // insert baris saldo (sesuai struktur: id_saldo, id_user, nama, saldo)
+                $insS = $conn->prepare("INSERT INTO saldo (id_user, nama, saldo) VALUES (?, ?, ?)");
+                $insS->bind_param("isi", $id_user, $user_nama, $nominal);
+                $insS->execute();
+            }
+
+            $conn->commit();
+            echo json_encode(["success" => true]);
+        } catch (Throwable $e) {
+            $conn->rollback();
+            echo json_encode(["error" => "Gagal menyimpan transaksi: " . $e->getMessage()]);
+        }
+        exit();
+    }
+
+    // ================= READ TRANSAKSI =================
+    elseif ($action === 'read') {
+        $sql = "SELECT t.id_trans, a.nama, t.no_hp, t.jenis_sampah, t.jumlah_setoran, t.created_at 
+                FROM `transaction` t
+                JOIN account a ON t.id_user = a.id_user
+                ORDER BY t.created_at DESC";
+        $res = $conn->query($sql);
+        $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+        echo json_encode($data);
+        exit();
+    }
+
+    // ================= UPDATE TRANSAKSI =================
+    elseif ($action === 'update') {
+        $id      = (int) ($_POST['id'] ?? 0);
+        // terima baik 'jenis' atau 'jenis_sampah' dari JS
+        $jenis_baru = trim($_POST['jenis'] ?? ($_POST['jenis_sampah'] ?? ''));
+        $jumlah_baru= (int)  ($_POST['jumlah'] ?? ($_POST['jumlah_setoran'] ?? 0));
+
+        if ($id <= 0 || $jenis_baru === '' || $jumlah_baru <= 0) {
+            echo json_encode(["error" => "Data update tidak lengkap atau tidak valid."]);
+            exit();
+        }
+        if (harga_perkg($jenis_baru) === 0) {
+            echo json_encode(["error" => "Jenis sampah update tidak valid."]);
+            exit();
+        }
+
+        $conn->begin_transaction();
+        try {
+            // ambil transaksi lama
+            $getOld = $conn->prepare("SELECT id_user, jenis_sampah, jumlah_setoran FROM `transaction` WHERE id_trans=?");
+            $getOld->bind_param("i", $id);
+            $getOld->execute();
+            $oldRes = $getOld->get_result();
+            if ($oldRes->num_rows === 0) throw new Exception("Transaksi tidak ditemukan.");
+
+            $old = $oldRes->fetch_assoc();
+            $id_user = (int)$old['id_user'];
+            $jenis_lama = $old['jenis_sampah'];
+            $jumlah_lama = (int)$old['jumlah_setoran'];
+
+            // update transaksi
+            $updT = $conn->prepare("UPDATE `transaction` SET jenis_sampah=?, jumlah_setoran=? WHERE id_trans=?");
+            $updT->bind_param("sii", $jenis_baru, $jumlah_baru, $id);
+            $updT->execute();
+
+            // hitung delta nominal untuk koreksi saldo
+            $nominal_lama = $jumlah_lama * harga_perkg($jenis_lama);
+            $nominal_baru = $jumlah_baru * harga_perkg($jenis_baru);
+            $delta = $nominal_baru - $nominal_lama; // bisa negatif
+
+            if ($delta !== 0) {
+                // ambil nama user agar bisa insert jika belum ada saldo
+                $q = $conn->prepare("SELECT nama FROM account WHERE id_user=? LIMIT 1");
+                $q->bind_param("i", $id_user);
+                $q->execute();
+                $r = $q->get_result();
+                $user_name = ($r->num_rows>0) ? $r->fetch_assoc()['nama'] : '';
+
+                $cekS = $conn->prepare("SELECT id_saldo, saldo FROM saldo WHERE id_user=?");
+                $cekS->bind_param("i", $id_user);
+                $cekS->execute();
+                $resS = $cekS->get_result();
+
+                if ($resS->num_rows > 0) {
+                    $rowS = $resS->fetch_assoc();
+                    $newSaldo = (int)$rowS['saldo'] + $delta;
+                    if ($newSaldo < 0) $newSaldo = 0;
+                    $updS = $conn->prepare("UPDATE saldo SET saldo=? WHERE id_saldo=?");
+                    $updS->bind_param("ii", $newSaldo, $rowS['id_saldo']);
+                    $updS->execute();
+                } else {
+                    $init = max(0, $delta);
+                    $insS = $conn->prepare("INSERT INTO saldo (id_user, nama, saldo) VALUES (?, ?, ?)");
+                    $insS->bind_param("isi", $id_user, $user_name, $init);
+                    $insS->execute();
+                }
+            }
+
+            $conn->commit();
+            echo json_encode(["success" => true]);
+        } catch (Throwable $e) {
+            $conn->rollback();
+            echo json_encode(["error" => "Gagal update transaksi: " . $e->getMessage()]);
+        }
+        exit();
+    }
+
+    // ================= DELETE TRANSAKSI =================
+    elseif ($action === 'delete') {
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(["error" => "ID tidak valid."]);
+            exit();
+        }
+
+        $conn->begin_transaction();
+        try {
+            // ambil transaksi lama untuk koreksi saldo
+            $getOld = $conn->prepare("SELECT id_user, jenis_sampah, jumlah_setoran FROM `transaction` WHERE id_trans=?");
+            $getOld->bind_param("i", $id);
+            $getOld->execute();
+            $oldRes = $getOld->get_result();
+            if ($oldRes->num_rows === 0) throw new Exception("Transaksi tidak ditemukan.");
+
+            $old = $oldRes->fetch_assoc();
+            $id_user = (int)$old['id_user'];
+            $jenis_lama = $old['jenis_sampah'];
+            $jumlah_lama = (int)$old['jumlah_setoran'];
+
+            // hapus transaksi
+            $del = $conn->prepare("DELETE FROM `transaction` WHERE id_trans=?");
+            $del->bind_param("i", $id);
+            $del->execute();
+
+            // kurangi saldo
+            $nominal_lama = $jumlah_lama * harga_perkg($jenis_lama);
+            if ($nominal_lama > 0) {
+                $cekS = $conn->prepare("SELECT id_saldo, saldo FROM saldo WHERE id_user=?");
+                $cekS->bind_param("i", $id_user);
+                $cekS->execute();
+                $resS = $cekS->get_result();
+                if ($resS->num_rows > 0) {
+                    $rowS = $resS->fetch_assoc();
+                    $newSaldo = max(0, (int)$rowS['saldo'] - $nominal_lama);
+                    $updS = $conn->prepare("UPDATE saldo SET saldo=? WHERE id_saldo=?");
+                    $updS->bind_param("ii", $newSaldo, $rowS['id_saldo']);
+                    $updS->execute();
+                }
+            }
+
+            $conn->commit();
+            echo json_encode(["success" => true]);
+        } catch (Throwable $e) {
+            $conn->rollback();
+            echo json_encode(["error" => "Gagal menghapus transaksi: " . $e->getMessage()]);
+        }
+        exit();
+    }
+
+    // ================= CREATE USER =================
+    elseif ($action === 'createUser') {
+        $nama   = trim($_POST['nama'] ?? '');
+        $no_hp  = trim($_POST['no_hp'] ?? '');
+        $alamat = trim($_POST['alamat'] ?? '');
+
+        if ($nama === '' || $no_hp === '') {
+            echo json_encode(["error" => "Data user tidak lengkap."]);
+            exit();
+        }
+
+        // cek duplikat no_hp
+        $cek = $conn->prepare("SELECT id_user FROM account WHERE no_hp=? LIMIT 1");
+        $cek->bind_param("s", $no_hp);
+        $cek->execute();
+        if ($cek->get_result()->num_rows > 0) {
+            echo json_encode(["error" => "No HP sudah terdaftar."]);
+            exit();
+        }
+
+        $password = password_hash("user123", PASSWORD_DEFAULT);
+        $role = "user";
+
+        $ins = $conn->prepare("INSERT INTO account (nama, no_hp, alamat, password, role) VALUES (?, ?, ?, ?, ?)");
+        $ins->bind_param("sssss", $nama, $no_hp, $alamat, $password, $role);
+        if ($ins->execute()) {
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["error" => "Gagal menambah user: " . $ins->error]);
+        }
+        exit();
+    }
+
+
+    // invalid action
+    else {
+        echo json_encode(["error" => "Invalid action"]);
+        exit();
+    }
 }
 ?>
 
@@ -23,22 +283,27 @@ if ($_SESSION['role'] !== 'admin') {
   <title>Dashboard Admin - Bank Sampah Karangsewu</title>
   <link rel="stylesheet" href="home.css">
   <style>
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 15px;
     }
-    .user-info h3 {
-      margin: 0;
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
     }
-    .user-info a.btn-logout {
-      text-decoration: none;
-      background-color: #f44336;
-      color: white;
+    table th {
+      background: #f2f2f2;
+    }
+    .btn {
       padding: 5px 10px;
+      border: none;
       border-radius: 5px;
-      font-size: 0.9em;
+      cursor: pointer;
     }
+    .btn-edit { background: #2196F3; color: white; }
+    .btn-delete { background: #f44336; color: white; }
   </style>
 </head>
 <body>
@@ -48,6 +313,7 @@ if ($_SESSION['role'] !== 'admin') {
     <nav>
       <a href="admin.php#home">Home</a>
       <a href="admin.php#transaksi">Transaksi</a>
+      <a href="admin.php#users">User</a>
       <a href="admin.php#maps">Peta</a>
       <a href="admin.php#kontak">Kontak</a>
       
@@ -66,14 +332,7 @@ if ($_SESSION['role'] !== 'admin') {
   <!-- Hero -->
   <section class="hero" id="home">
     <h1>Selamat Datang Admin, <?= htmlspecialchars($_SESSION['nama']); ?>!</h1>
-    <p>Ini adalah halaman dashboard khusus admin. Anda dapat memantau dan mengelola transaksi sampah di sini.</p>
-  </section>
-
-  <!-- Features / Dashboard -->
-  <section class="features">
-    <div class="card">♻️ Kelola Transaksi</div>
-    <div class="card">🧾 Laporan Harian</div>
-    <div class="card">🛠️ Pengaturan Sistem</div>
+    <p>Ini adalah halaman dashboard khusus admin. Anda dapat memantau dan mengelola transaksi serta user di sini.</p>
   </section>
 
   <!-- Transaksi -->
@@ -82,42 +341,171 @@ if ($_SESSION['role'] !== 'admin') {
     <form id="transaksiForm">
       <input type="text" id="nama" placeholder="Nama penyetor" required>
       <select id="jenis">
-        <option value="Botol Plastik BEP">Botol Plastik BEP</option>
-        <option value="Kantong Kresek">Kantong Kresek</option>
-        <option value="Gelas Plastik">Gelas Plastik</option>
+        <option value="Botol Plastik">Botol Plastik</option>
+        <option value="Aluminium">Aluminium</option>
+        <option value="Kayu">Kayu</option>
+        <option value="Kertas">Kertas</option>
       </select>
       <input type="number" id="jumlah" placeholder="Jumlah (kg)" required>
-      <button type="submit">Kirim</button>
+      <button type="submit">Tambah</button>
     </form>
 
     <h3>Riwayat Transaksi</h3>
     <table id="riwayat">
       <thead>
         <tr>
+          <th>ID</th>
           <th>Nama</th>
           <th>Jenis Sampah</th>
           <th>Jumlah (kg)</th>
+          <th>Tanggal</th>
+          <th>Aksi</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
 
-  <!-- Maps -->
-  <section class="maps" id="maps">
-    <h2>Lokasi Pengepul</h2>
-    <iframe 
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3958.616302826964!2d110.267!3d-7.373!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zN8KwMjInMjIuMCJTIDExMMKwMTUnNTIuMCJF!5e0!3m2!1sid!2sid!4v0000000000000" 
-      width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy">
-    </iframe>
+  <!-- User -->
+  <section class="users" id="users">
+    <h2>Tambah User Baru</h2>
+    <form id="userForm">
+      <input type="text" id="user_nama" placeholder="Nama" required>
+      <input type="text" id="user_hp" placeholder="No HP" required>
+      <input type="text" id="user_alamat" placeholder="Alamat" required>
+      <button type="submit">Tambah User</button>
+    </form>
+        
   </section>
 
-  <!-- Footer -->
-  <footer id="kontak">
-    <p>📍 Desa Karangsewu | 🌐 @banksampahkarangsewu</p>
-    <p>© 2025 Bank Sampah Karangsewu</p>
-  </footer>
+  <script>
+    const form = document.getElementById('transaksiForm');
+    const tbody = document.querySelector('#riwayat tbody');
 
-  <script src="home.js"></script>
+    // Load data transaksi
+    function loadData() {
+      fetch('admin.php?action=read')
+        .then(res => res.json())
+        .then(data => {
+          tbody.innerHTML = '';
+          data.forEach(row => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${row.id_trans}</td>
+                <td>${row.nama}</td>
+                <td>${row.jenis_sampah}</td>
+                <td>${row.jumlah_setoran}</td>
+                <td>${row.created_at}</td>
+                <td>
+                  <button class="btn btn-edit" onclick="editData(${row.id_trans}, '${row.jenis_sampah}', ${row.jumlah_setoran})">Edit</button>
+                  <button class="btn btn-delete" onclick="deleteData(${row.id_trans})">Hapus</button>
+                </td>
+              </tr>
+            `;
+          });
+        });
+    }
+
+    // Tambah transaksi
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('nama', document.getElementById('nama').value);
+      formData.append('jenis', document.getElementById('jenis').value);
+      formData.append('jumlah', document.getElementById('jumlah').value);
+
+      fetch('admin.php?action=create', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            form.reset();
+            loadData();
+          } else {
+            alert(res.error);
+          }
+        });
+    });
+
+    // Edit transaksi
+    function editData(id, jenis, jumlah) {
+      const newJenis = prompt("Jenis Sampah:", jenis);
+      const newJumlah = prompt("Jumlah (kg):", jumlah);
+
+      if (newJenis && newJumlah) {
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('jenis', newJenis);
+        formData.append('jumlah', newJumlah);
+
+        fetch('admin.php?action=update', { method: 'POST', body: formData })
+          .then(res => res.json())
+          .then(res => {
+            if (res.success) loadData();
+          });
+      }
+    }
+
+    // Hapus transaksi
+    function deleteData(id) {
+      if (confirm("Yakin ingin menghapus transaksi ini?")) {
+        const formData = new FormData();
+        formData.append('id', id);
+
+        fetch('admin.php?action=delete', { method: 'POST', body: formData })
+          .then(res => res.json())
+          .then(res => {
+            if (res.success) loadData();
+          });
+      }
+    }
+
+    // ====================== USER ======================
+    const userForm = document.getElementById('userForm');
+    const userTbody = document.querySelector('#userTable tbody');
+
+    // Load user
+    function loadUser() {
+      fetch('admin.php?action=readUser')
+        .then(res => res.json())
+        .then(data => {
+          userTbody.innerHTML = '';
+          data.forEach(row => {
+            userTbody.innerHTML += `
+              <tr>
+                <td>${row.id_user}</td>
+                <td>${row.nama}</td>
+                <td>${row.no_hp}</td>
+                <td>${row.alamat}</td>
+                <td>${row.role}</td>
+              </tr>
+            `;
+          });
+        });
+    }
+
+    // Tambah user
+    userForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('nama', document.getElementById('user_nama').value);
+      formData.append('no_hp', document.getElementById('user_hp').value);
+      formData.append('alamat', document.getElementById('user_alamat').value);
+
+      fetch('admin.php?action=createUser', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(res => {
+          if (res.success) {
+            userForm.reset();
+            loadUser();
+          } else {
+            alert(res.error);
+          }
+        });
+    });
+
+    // Jalankan saat halaman dibuka
+    loadData();
+    loadUser();
+  </script>
 </body>
 </html>

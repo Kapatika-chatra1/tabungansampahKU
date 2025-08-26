@@ -1,22 +1,54 @@
-const form = document.getElementById("transaksiForm");
-const riwayat = document.querySelector("#riwayat tbody");
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("transaksiForm");
+  const tbody = document.querySelector("#riwayat tbody");
 
-form.addEventListener("submit", function (e) {
-  e.preventDefault();
+  // Load transaksi saat halaman dibuka
+  loadTransaksi();
 
-  const nama = document.getElementById("nama").value;
-  const jenis = document.getElementById("jenis").value;
-  const jumlah = document.getElementById("jumlah").value;
+  function loadTransaksi() {
+    fetch("transaksi.php?action=read")
+      .then(res => res.json())
+      .then(data => {
+        tbody.innerHTML = "";
+        data.forEach(row => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${row.nama}</td>
+              <td>${row.jenis_sampah}</td>
+              <td>${row.jumlah}</td>
+              <td>
+                <button onclick="hapus(${row.id_transaksi})">Hapus</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  }
 
-  // Tambah ke tabel
-  const row = document.createElement("tr");
-  row.innerHTML = `
-    <td>${nama}</td>
-    <td>${jenis}</td>
-    <td>${jumlah}</td>
-  `;
-  riwayat.appendChild(row);
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    fetch("transaksi.php?action=create", {
+      method: "POST",
+      body: fd
+    })
+    .then(res => res.json())
+    .then(res => {
+      if (res.success) {
+        form.reset();
+        loadTransaksi();
+      } else {
+        alert(res.error);
+      }
+    });
+  });
 
-  // Reset form
-  form.reset();
+  window.hapus = (id) => {
+    let fd = new FormData();
+    fd.append("id", id);
+    fetch("transaksi.php?action=delete", {
+      method: "POST",
+      body: fd
+    }).then(() => loadTransaksi());
+  };
 });
