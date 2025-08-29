@@ -310,22 +310,21 @@ if (isset($_GET['action'])) {
   <!-- Header -->
   <header>
     <div class="logo">🌱 Bank Sampah Karangsewu</div>
-    <nav>
-      <a href="admin.php#home">Home</a>
-      <a href="admin.php#transaksi">Transaksi</a>
-      <a href="admin.php#users">User</a>
-      <a href="admin.php#maps">Peta</a>
-      <a href="admin.php#kontak">Kontak</a>
-      
-      <?php if(isset($_SESSION['id_user'])): ?>
-        <div class="user-info">
+    <div class="user" ><h3><?php if(isset($_SESSION['id_user'])): ?>
+      <!-- <div class="user-info"> -->
           <h3><?= htmlspecialchars($_SESSION['nama']); ?></h3>
+        <!-- </div> --></h3></div>
+      <nav>
+        <?php else: ?>
+          <a href="login.php" class="login-btn">Masuk</a>
+          <a href="register.php" class="register-btn">Daftar</a>
+          <?php endif; ?>
+          <a href="admin.php#home">Home</a>
+          <a href="admin.php#transaksi">Transaksi</a>
+          <a href="admin.php#users">User</a>
+          <a href="admin.php#maps">Peta</a>
+          <a href="admin.php#kontak">Kontak</a>
           <a href="logout.php" class="btn-logout">Keluar</a>
-        </div>
-      <?php else: ?>
-        <a href="login.php" class="login-btn">Masuk</a>
-        <a href="register.php" class="register-btn">Daftar</a>
-      <?php endif; ?>
     </nav>
   </header>
 
@@ -378,6 +377,11 @@ if (isset($_GET['action'])) {
         
   </section>
 
+  <footer id="kontak">
+    <p>📍 Desa Karangsewu | 🌐 @banksampahkarangsewu</p>
+    <p>© 2025 Bank Sampah Karangsewu</p>
+  </footer>
+        
   <script>
     const form = document.getElementById('transaksiForm');
     const tbody = document.querySelector('#riwayat tbody');

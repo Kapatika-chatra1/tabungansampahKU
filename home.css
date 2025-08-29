@@ -20,6 +20,12 @@ header nav a {
   color: white;
   font-weight: bold;
 }
+.user{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
 
 .hero {
   text-align: center;
@@ -54,6 +60,7 @@ header nav a {
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 20px;
+  flex-direction: column;
 }
 
 .transaksi input, .transaksi select, .transaksi button {
@@ -84,14 +91,41 @@ header nav a {
   background: #f9fbe7;
 }
 
+
+.users{
+  padding: 40px;
+  background: white;
+  margin-bottom: 100px;
+}
+
+.users form{
+  display: flex;
+  flex-direction: column;
+  max-width: 40%;
+}
+.users input, .users select, .users button {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.users button {
+  background: #2e7d32;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-logout{
+  color: white;
+  background-color: red;
+  padding: 10px;
+  border-radius: 10px;
+}
+
 footer {
   text-align: center;
   padding: 20px;
   background: #2e7d32;
   color: white;
-}
-
-.users{
-  padding: 40px;
-  background: white;
 }
