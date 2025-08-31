@@ -26,12 +26,16 @@ if ($result && mysqli_num_rows($result) > 0) {
     $saldo = $row['saldo'];
 }
 
-// Dummy riwayat transaksi
-$riwayat = [
-    ["tanggal" => "20/01/2024", "jenis" => "Botol Plastik", "berat" => "2.5", "harga" => 3000, "total" => 7500, "status" => "Selesai"],
-    ["tanggal" => "18/01/2024", "jenis" => "Kertas", "berat" => "3", "harga" => 2000, "total" => 6000, "status" => "Selesai"],
-    ["tanggal" => "15/01/2024", "jenis" => "Kardus", "berat" => "1.8", "harga" => 2500, "total" => 4500, "status" => "Pending"],
-];
+// Ambil riwayat transaksi dari database
+$query_riwayat = "SELECT * FROM `transaction` WHERE id_user = '$id_user'";
+$result_riwayat = mysqli_query($conn, $query_riwayat);
+
+$riwayat = [];
+if ($result_riwayat && mysqli_num_rows($result_riwayat) > 0) {
+    while ($row = mysqli_fetch_assoc($result_riwayat)) {
+        $riwayat[] = $row;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -62,27 +66,19 @@ $riwayat = [
       <h3>📜 Riwayat Penjualan Sampah</h3>
       <table>
         <tr>
-          <th>Tanggal</th>
+          <th>ID Transaksi</th>
+          <th>ID User</th>
+          <th>No. HP</th>
           <th>Jenis Sampah</th>
-          <th>Berat (kg)</th>
-          <th>Harga</th>
-          <th>Total</th>
-          <th>Status</th>
+          <th>Jumlah Setoran</th>
         </tr>
         <?php foreach ($riwayat as $r): ?>
           <tr>
-            <td><?php echo $r['tanggal']; ?></td>
-            <td><?php echo $r['jenis']; ?></td>
-            <td><?php echo $r['berat']; ?></td>
-            <td>Rp <?php echo number_format($r['harga'], 0, ',', '.'); ?></td>
-            <td class="total">Rp <?php echo number_format($r['total'], 0, ',', '.'); ?></td>
-            <td>
-              <?php if ($r['status'] == "Selesai"): ?>
-                <span class="status success">Selesai</span>
-              <?php else: ?>
-                <span class="status pending">Pending</span>
-              <?php endif; ?>
-            </td>
+            <td><?php echo $r['id_trans']; ?></td>
+            <td><?php echo $r['id_user']; ?></td>
+            <td><?php echo $r['no_hp']; ?></td>
+            <td><?php echo $r['jenis_sampah']; ?></td>
+            <td><?php echo $r['jumlah_setoran']; ?></td>
           </tr>
         <?php endforeach; ?>
       </table>
@@ -94,10 +90,10 @@ $riwayat = [
   </div>
   <script>
     
-  setInterval(() => {
-    document.body.style.backgroundImage = 
-      "url('https://picsum.photos/1920/1080?random&t=" + new Date().getTime() + "')";
-  }, 1000); // ganti setiap 1 detik
+  //setInterval(() => {
+    //document.body.style.backgroundImage = 
+      //"url('https://picsum.photos/1920/1080?random&t=" + new Date().getTime() + "')";
+  //}, 10000); // ganti setiap 1 detik
 </script>
 
 </body>
