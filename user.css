@@ -1,0 +1,128 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #a5d6a7, #81c784);
+  color: #333;
+}
+
+/* Header */
+header {
+  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+/* Container */
+.container {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+/* Welcome */
+.welcome {
+  font-size: 18px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* Card Saldo */
+.saldo-card {
+  background: white;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  margin-bottom: 25px;
+  text-align: center;
+}
+.saldo-card h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #2e7d32;
+}
+.saldo-card p {
+  margin-top: 10px;
+  font-size: 30px;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+/* Table Card */
+.table-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.table-card h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+th {
+  background: #fafafa;
+  font-weight: 600;
+}
+.total {
+  font-weight: bold;
+  color: #2e7d32;
+}
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.status.success {
+  background: #e6f4ea;
+  color: #2e7d32;
+}
+.status.pending {
+  background: #fff4e5;
+  color: #ff9800;
+}
+
+/* Buttons */
+.actions {
+  margin-top: 20px;
+  text-align: center;
+}
+.btn {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s;
+  min-width: 160px;
+  text-align: center;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+.btn-danger {
+  background: #f44336;
+  color: white;
+}
+.btn-danger:hover {
+  background: #d32f2f;
+}
+
+/* Responsif */
+@media (max-width: 768px) {
+  th, td { font-size: 13px; padding: 10px; }
+  .saldo-card p { font-size: 24px; }
+}
