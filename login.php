@@ -86,11 +86,6 @@ if ($akun) {
         <input type="password" name="password" placeholder="Masukkan password" required>
         <button type="submit" class="btn">Masuk</button>
         <?php if($login_error) echo "<p style='color:red; margin-top:10px;'>$login_error</p>"; ?>
-        <div class="demo">
-          <p><b>Demo credentials:</b></p>
-          <p>Admin: admin@banksampah.id / admin123</p>
-          <p>User: budi@gmail.com / budi123</p>
-        </div>
       </form>
 
       <!-- Form Register -->
