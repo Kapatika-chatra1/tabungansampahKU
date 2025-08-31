@@ -20,7 +20,7 @@ header nav a {
   color: white;
   font-weight: bold;
 }
-.user{
+.user {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -30,8 +30,44 @@ header nav a {
 .hero {
   text-align: center;
   padding: 60px 20px;
-  background: linear-gradient(rgba(46,125,50,0.7), rgba(46,125,50,0.7)), url('https://picsum.photos/1200/400?green') no-repeat center/cover;
-  color: white;
+  /* background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(46, 125, 50, 0.7)), url('https://picsum.photos/1200/400?green') no-repeat center/cover; */
+  color: rgb(31, 122, 34);
+}
+
+/* Wadah utama slider */
+.slider-container {
+  position: relative; /* Wajib agar slide bisa ditumpuk */
+  max-width: 1540px; /* Batasi lebar maksimal agar tidak terlalu besar */
+  max-height: 2000px;
+  aspect-ratio: 16 / 9; /* Menjaga bentuk persegi panjang (widescreen) */
+  overflow: hidden; /* Sembunyikan bagian gambar yang mungkin keluar */
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 100%; /* Lebar wadah 100% dari layar */
+  height: 50vh; /* 💡 Tinggi wadah 50% dari tinggi viewport (layar) */
+}
+
+.slide {
+  position: absolute; /* Menumpuk semua slide di titik yang sama (0,0) */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; /* Sembunyikan semua slide secara default */
+  transition: opacity 1.2s ease-in-out; /* Efek transisi fade yang halus */
+}
+
+/* Kelas 'active' yang akan ditambahkan oleh JavaScript */
+.slide.active {
+  opacity: 1; /* Tampilkan slide yang sedang aktif */
+}
+
+/* Styling untuk tag gambar di dalam slide */
+.slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* object-fit: contain;  */
 }
 
 .features {
@@ -47,7 +83,7 @@ header nav a {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .transaksi {
@@ -63,7 +99,9 @@ header nav a {
   flex-direction: column;
 }
 
-.transaksi input, .transaksi select, .transaksi button {
+.transaksi input,
+.transaksi select,
+.transaksi button {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -80,7 +118,8 @@ header nav a {
   border-collapse: collapse;
 }
 
-.transaksi th, .transaksi td {
+.transaksi th,
+.transaksi td {
   border: 1px solid #ccc;
   padding: 10px;
   text-align: center;
@@ -91,19 +130,20 @@ header nav a {
   background: #f9fbe7;
 }
 
-
-.users{
+.users {
   padding: 40px;
   background: white;
   margin-bottom: 100px;
 }
 
-.users form{
+.users form {
   display: flex;
   flex-direction: column;
   max-width: 40%;
 }
-.users input, .users select, .users button {
+.users input,
+.users select,
+.users button {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -116,7 +156,7 @@ header nav a {
   cursor: pointer;
 }
 
-.btn-logout{
+.btn-logout {
   color: white;
   background-color: red;
   padding: 10px;
