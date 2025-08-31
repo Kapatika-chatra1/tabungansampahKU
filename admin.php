@@ -1,4 +1,4 @@
-    <?php
+<?php
 session_start();
 require 'koneksi.php';
 
@@ -93,16 +93,18 @@ if (isset($_GET['action'])) {
     }
 
     // ================= READ TRANSAKSI =================
-    elseif ($action === 'read') {
-        $sql = "SELECT t.id_trans, a.nama, t.no_hp, t.jenis_sampah, t.jumlah_setoran, t.created_at 
-                FROM `transaction` t
-                JOIN account a ON t.id_user = a.id_user
-                ORDER BY t.created_at DESC";
-        $res = $conn->query($sql);
-        $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-        echo json_encode($data);
-        exit();
-    }
+   elseif ($action === 'read') {
+    $sql = "SELECT t.id_trans, a.nama, t.jenis_sampah, t.jumlah_setoran, t.tanggal
+            FROM `transaction` t
+            JOIN account a ON t.id_user = a.id_user
+            ORDER BY t.id_trans DESC";
+    $res = $conn->query($sql);
+    $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    echo json_encode($data);
+    exit();
+}
+
+
 
     // ================= UPDATE TRANSAKSI =================
     elseif ($action === 'update') {
@@ -281,7 +283,7 @@ if (isset($_GET['action'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin - Bank Sampah Karangsewu</title>
-  <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="admin.css">
   <style>
     table {
       border-collapse: collapse;
@@ -336,8 +338,9 @@ if (isset($_GET['action'])) {
 
   <!-- Transaksi -->
   <section class="transaksi" id="transaksi">
-    <h2>Form Transaksi</h2>
+
     <form id="transaksiForm">
+      <h2>Form Transaksi</h2>
       <input type="text" id="nama" placeholder="Nama penyetor" required>
       <select id="jenis">
         <option value="Botol Plastik">Botol Plastik</option>
@@ -348,7 +351,20 @@ if (isset($_GET['action'])) {
       <input type="number" id="jumlah" placeholder="Jumlah (kg)" required>
       <button type="submit">Tambah</button>
     </form>
+  
+          <!-- User -->
+  <div class="users" id="users">
+    <h2>Tambah User Baru</h2>
+    <form id="userForm">
+      <input type="text" id="user_nama" placeholder="Nama" required>
+      <input type="text" id="user_hp" placeholder="No HP" required>
+      <input type="text" id="user_alamat" placeholder="Alamat" required>
+      <button type="submit">Tambah User</button>
+    </form>
+  </div>
+  </section>
 
+<section>
     <h3>Riwayat Transaksi</h3>
     <table id="riwayat">
       <thead>
@@ -365,17 +381,7 @@ if (isset($_GET['action'])) {
     </table>
   </section>
 
-  <!-- User -->
-  <section class="users" id="users">
-    <h2>Tambah User Baru</h2>
-    <form id="userForm">
-      <input type="text" id="user_nama" placeholder="Nama" required>
-      <input type="text" id="user_hp" placeholder="No HP" required>
-      <input type="text" id="user_alamat" placeholder="Alamat" required>
-      <button type="submit">Tambah User</button>
-    </form>
-        
-  </section>
+  
 
   <footer id="kontak">
     <p>📍 Desa Karangsewu | 🌐 @banksampahkarangsewu</p>

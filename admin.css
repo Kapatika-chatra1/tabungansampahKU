@@ -1,0 +1,158 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f8e9;
+    color: #2e7d32;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #2e7d32;
+    color: white;
+    padding: 15px 30px;
+}
+
+header nav a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+}
+
+.user {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(46, 125, 50, 0.7)), url('https://picsum.photos/1200/400?green') no-repeat center/cover;
+    color: white;
+}
+
+.features {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px;
+}
+
+.card {
+    flex: 1;
+    text-align: center;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.transaksi {
+    padding: 40px;
+    background: white;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.container {
+    display: flex;
+    justify-content: space-around;
+    /* memberi jarak kanan-kiri */
+    align-items: flex-start;
+    /* agar posisi atas sejajar */
+    gap: 50px;
+    /* jarak antar form */
+    margin-top: 200px;
+}
+
+.transaksi form,
+.users form {
+    width: 550px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.transaksi input,
+.transaksi select,
+.transaksi button {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-width: 100%;
+}
+
+.transaksi button {
+    background: #2e7d32;
+    color: white;
+    cursor: pointer;
+}
+
+.transaksi table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transaksi th,
+.transaksi td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+}
+
+.maps {
+    padding: 40px;
+    background: #f9fbe7;
+}
+
+.transaksi form,
+.users form {
+    /*used (form transaksi)*/
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.users form {
+    /*used(tambah user baru)*/
+    width: 550px;
+    display: flex;
+    gap: 1px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    flex-direction: column;
+}
+
+.users input,
+.users select,
+.users button {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.users button {
+    background: #2e7d32;
+    color: white;
+    cursor: pointer;
+}
+
+.btn-logout {
+    color: white;
+    background-color: red;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background: #2e7d32;
+    color: white;
+}
