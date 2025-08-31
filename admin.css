@@ -1,3 +1,17 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -155,4 +169,5 @@ footer {
     padding: 20px;
     background: #2e7d32;
     color: white;
+    margin-top: auto;
 }
