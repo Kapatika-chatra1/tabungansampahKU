@@ -125,9 +125,32 @@ header nav a {
   text-align: center;
 }
 
+/* Map Section Styling */
 .maps {
-  padding: 40px;
-  background: #f9fbe7;
+  background: #f1f8e9;
+  padding: 40px 0;
+  text-align: center;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(46, 125, 50, 0.08);
+  margin: 40px auto;
+  max-width: 800px;
+}
+
+.maps h2 {
+  color: #2e7d32;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+#map {
+  width: 100%;
+  max-width: 700px;
+  height: 450px;
+  margin: 0 auto;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(46, 125, 50, 0.15);
+  border: 2px solid #81c784;
 }
 
 .users {
@@ -168,4 +191,21 @@ footer {
   padding: 20px;
   background: #2e7d32;
   color: white;
+}
+
+/* Map responsive */
+#map {
+  width: 100%;
+  max-width: 700px;
+  height: 450px;
+  margin: 0 auto;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(46, 125, 50, 0.15);
+  border: 2px solid #81c784;
+}
+
+/* Saat fullscreen */
+.leaflet-container:fullscreen {
+  width: 100% !important;
+  height: 100% !important;
 }

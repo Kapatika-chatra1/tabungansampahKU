@@ -387,7 +387,7 @@ if (isset($_GET['action'])) {
     <p>📍 Desa Karangsewu | 🌐 @banksampahkarangsewu</p>
     <p>© 2025 Bank Sampah Karangsewu</p>
   </footer>
-        
+      
   <script>
     const form = document.getElementById('transaksiForm');
     const tbody = document.querySelector('#riwayat tbody');

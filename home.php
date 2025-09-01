@@ -6,6 +6,8 @@
   <title>Bank Sampah Desa Karangsewu</title>
   <link rel="icon" href="../tabungansampahKU/img/logoKP.png">
   <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
   <!-- Header -->
@@ -75,12 +77,10 @@
 
   <!-- Maps -->
   <section class="maps" id="maps">
-    <h2>Lokasi Pengepul</h2>
-    <!--<iframe 
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3958.616302826964!2d110.267!3d-7.373!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zN8KwMjInMjIuMCJTIDExMMKwMTUnNTIuMCJF!5e0!3m2!1sid!2sid!4v0000000000000" 
-      width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy">
-    </iframe>
-  </section>
+  <h2>Lokasi Pengepul</h2>
+  <!-- Peta Leaflet -->
+  <div id="map" style="height:450px; width:600px;"></div>
+</section>
 
   <!-- Footer -->
   <footer id="kontak">
@@ -89,6 +89,20 @@
   </footer>
 
   <script src="home.js"></script>
-  <script src="runSlider.js"></script>
+  <script src="runSlider.js"></script><script>
+  // Inisialisasi peta
+  var map = L.map('map').setView([-7.9539772,110.1813977], 11); // Karangsewu, DIY
+
+  // Layer OpenStreetMap
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Tambah marker contoh
+  L.marker([-7.9490876, 110.1975741])
+    .addTo(map)
+    .bindPopup("Titik Bank Sampah Sorogaten")
+    .openPopup();
+</script>
 </body>
 </html>
