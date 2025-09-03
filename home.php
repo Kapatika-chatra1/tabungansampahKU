@@ -29,13 +29,13 @@
     <p>Bersama masyarakat Karangsewu, kita ciptakan lingkungan yang sehat dan bernilai ekonomi.</p>
     <div class="slider-container">
         <div class="slide">
-            <img src="../tabungansampahKU/img/pabrikgula.jpg" alt="Deskripsi gambar 1">
+            <img src="img/pabrikgula.jpg" alt="Deskripsi gambar 1">
         </div>
         <div class="slide">
-            <img src="../tabungansampahKU/img/tambak.JPG" alt="Deskripsi gambar 2">
+            <img src="img/tambak.JPG" alt="Deskripsi gambar 2">
         </div>
         <div class="slide">
-            <img src="../tabungansampahKU/img/gambar3.JPG" alt="Deskripsi gambar 3">
+            <img src="img/gambar3.JPG" alt="Deskripsi gambar 3">
         </div>
     </div>
 
@@ -47,34 +47,6 @@
     <div class="card">🗺️ Lacak Pengepul</div>
     <div class="card">🧴 Jenis Sampah</div>
   </section> 
-
-  <!-- Transaksi -->
-  <!-- <section class="transaksi" id="transaksi">
-    <h2>Form Transaksi</h2>
-    <form id="transaksiForm">
-      <input type="text" id="nama" placeholder="Nama penyetor" required>
-      <select id="jenis">
-        <option value="Botol Plastik BEP">Botol Plastik BEP</option>
-        <option value="Kantong Kresek">Kantong Kresek</option>
-        <option value="Gelas Plastik">Gelas Plastik</option>
-      </select>
-      <input type="number" id="jumlah" placeholder="Jumlah (kg)" required>
-      <button type="submit">Kirim</button>
-    </form>
-
-    <h3>Riwayat Transaksi</h3>
-    <table id="riwayat">
-      <thead>
-        <tr>
-          <th>Nama</th>
-          <th>Jenis Sampah</th>
-          <th>Jumlah (kg)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section> -->
-
   <!-- Maps -->
   <section class="maps" id="maps">
   <h2>Lokasi Pengepul</h2>
@@ -89,7 +61,9 @@
   </footer>
 
   <script src="home.js"></script>
-  <script src="runSlider.js"></script><script>
+  <script src="runSlider.js"></script>
+  
+  <script>
   // Inisialisasi peta
   var map = L.map('map').setView([-7.9539772,110.1813977], 11); // Karangsewu, DIY
 

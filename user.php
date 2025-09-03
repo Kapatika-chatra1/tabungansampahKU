@@ -95,13 +95,28 @@ if ($result_riwayat && mysqli_num_rows($result_riwayat) > 0) {
     <p>© 2025 Bank Sampah Karangsewu</p>
   </footer>
 
-  <script>
-    
-  //setInterval(() => {
-    //document.body.style.backgroundImage = 
-      //"url('https://picsum.photos/1920/1080?random&t=" + new Date().getTime() + "')";
-  //}, 10000); // ganti setiap 1 detik
-</script>
+          <!-- Maps -->
+  <section class="maps" id="maps">
+  <h2>Lokasi Pengepul</h2>
+  <!-- Peta Leaflet -->
+  <div id="map" style="height:450px; width:600px;"></div>
+</section>
+  <!-- Footer -->
+  <script src="home.js"></script>
+  <script src="runSlider.js"></script><script>
+  // Inisialisasi peta
+  var map = L.map('map').setView([-7.9539772,110.1813977], 11);
 
+  // Layer OpenStreetMap
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Tambah marker contoh
+  L.marker([-7.9490876, 110.1975741])
+    .addTo(map)
+    .bindPopup("Titik Bank Sampah Sorogaten")
+    .openPopup();
+</script>
 </body>
 </html>

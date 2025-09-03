@@ -94,18 +94,15 @@ if (isset($_GET['action'])) {
 
     // ================= READ TRANSAKSI =================
    elseif ($action === 'read') {
-    $sql = "SELECT t.id_trans, a.nama, t.jenis_sampah, t.jumlah_setoran, t.tanggal
+    $sql = "SELECT t.id_trans, a.nama, t.jenis_sampah, t.tanggal, t.jumlah_setoran
             FROM `transaction` t
             JOIN account a ON t.id_user = a.id_user
-            ORDER BY t.id_trans DESC";
+            ORDER BY t.id_trans";
     $res = $conn->query($sql);
     $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     echo json_encode($data);
     exit();
 }
-
-
-
     // ================= UPDATE TRANSAKSI =================
     elseif ($action === 'update') {
         $id      = (int) ($_POST['id'] ?? 0);
@@ -405,7 +402,7 @@ if (isset($_GET['action'])) {
                 <td>${row.nama}</td>
                 <td>${row.jenis_sampah}</td>
                 <td>${row.jumlah_setoran}</td>
-                <td>${row.created_at}</td>
+                <td>${row.tanggal}</td>
                 <td>
                   <button class="btn btn-edit" onclick="editData(${row.id_trans}, '${row.jenis_sampah}', ${row.jumlah_setoran})">Edit</button>
                   <button class="btn btn-delete" onclick="deleteData(${row.id_trans})">Hapus</button>
