@@ -97,6 +97,7 @@ if (isset($_GET['action'])) {
     $sql = "SELECT t.id_trans, a.nama, t.jenis_sampah, t.tanggal, t.jumlah_setoran
             FROM `transaction` t
             JOIN account a ON t.id_user = a.id_user
+            WHERE t.tanggal >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
             ORDER BY t.id_trans";
     $res = $conn->query($sql);
     $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];

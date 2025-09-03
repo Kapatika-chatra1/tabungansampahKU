@@ -43,7 +43,7 @@
 
   <!-- Features -->
   <section class="features">
-    <div class="card">♻️ Transaksi Sampah</div>
+    <div class="card">♻️  Transaksi Sampah</div>
     <div class="card">🗺️ Lacak Pengepul</div>
     <div class="card">🧴 Jenis Sampah</div>
   </section> 
