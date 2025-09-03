@@ -27,7 +27,17 @@ if ($result && mysqli_num_rows($result) > 0) {
 }
 
 // Ambil riwayat transaksi dari database
-$query_riwayat = "SELECT * FROM `transaction` WHERE id_user = '$id_user'";
+$query_riwayat = "
+    SELECT 
+        t.id_trans AS id_transaksi,
+        a.nama AS nama_user,
+        t.jenis_sampah,
+        t.jumlah_setoran
+    FROM `transaction` t
+    JOIN account a ON t.id_user = a.id_user
+    WHERE t.id_user = '$id_user'
+";
+
 $result_riwayat = mysqli_query($conn, $query_riwayat);
 
 $riwayat = [];
@@ -68,16 +78,14 @@ if ($result_riwayat && mysqli_num_rows($result_riwayat) > 0) {
       <table>
         <tr>
           <th>ID Transaksi</th>
-          <th>ID User</th>
-          <th>No. HP</th>
+          <th>Nama</th>
           <th>Jenis Sampah</th>
           <th>Jumlah Setoran</th>
         </tr>
         <?php foreach ($riwayat as $r): ?>
           <tr>
-            <td><?php echo $r['id_trans']; ?></td>
-            <td><?php echo $r['id_user']; ?></td>
-            <td><?php echo $r['no_hp']; ?></td>
+            <td><?php echo $r['id_transaksi']; ?></td>
+            <td><?php echo $r['nama_user']; ?></td>
             <td><?php echo $r['jenis_sampah']; ?></td>
             <td><?php echo $r['jumlah_setoran']; ?></td>
           </tr>
