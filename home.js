@@ -1,26 +1,24 @@
-// ===== SLIDER =====
-document.addEventListener('DOMContentLoaded', () => {
-  const slides = [...document.querySelectorAll('.slide')];
-  if (!slides.length) return;
+// Smooth scroll
+function smoothScrollTo(hash) {
+  const el = document.querySelector(hash);
+  if (!el) return;
+  const top = el.getBoundingClientRect().top + window.scrollY - 64;
+  window.scrollTo({ top, behavior: 'smooth' });
+}
 
-  // Aktifkan slide pertama jika belum
-  if (!document.querySelector('.slide.active')) slides[0].classList.add('active');
-
-  // Auto-play
-  let i = slides.findIndex(s => s.classList.contains('active'));
-  const next = () => {
-    slides[i].classList.remove('active');
-    i = (i + 1) % slides.length;
-    slides[i].classList.add('active');
-  };
-  setInterval(next, 5000);
+// Header + toTop
+const header = document.getElementById('siteHeader');
+const toTop  = document.getElementById('toTop');
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 12);
+  toTop.classList.toggle('show', window.scrollY > 480);
 });
+toTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-// ===== MOBILE MENU =====
+// Mobile menu (FIX: jangan andalkan display:none)
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 const mobileMenu       = document.getElementById('mobileMenu');
-const mobileNavLinks   = document.querySelectorAll('.mobile-nav-links a');
-const closeBtn         = document.getElementById('mobileMenuClose');
+const mobileClose      = document.getElementById('mobileMenuClose');
 
 function openMenu(){
   mobileMenu.classList.add('active');
@@ -31,78 +29,107 @@ function openMenu(){
 function closeMenu(){
   mobileMenu.classList.remove('active');
   mobileMenuToggle.classList.remove('active');
-  document.body.style.overflow = 'auto';
+  document.body.style.overflow = '';
   mobileMenuToggle.setAttribute('aria-expanded','false');
 }
+mobileMenuToggle?.addEventListener('click', () => mobileMenu.classList.contains('active') ? closeMenu() : openMenu());
+mobileClose?.addEventListener('click', closeMenu);
+mobileMenu?.addEventListener('click', (e) => { if (e.target === mobileMenu) closeMenu(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mobileMenu?.classList.contains('active')) closeMenu(); });
 
-if (mobileMenuToggle && mobileMenu) {
-  mobileMenuToggle.addEventListener('click', () => {
-    mobileMenu.classList.contains('active') ? closeMenu() : openMenu();
+// Close menu & smooth scroll on anchor (internal)
+document.querySelectorAll('.mobile-links a, .nav-desktop a[href^="#"]').forEach(a => {
+  a.addEventListener('click', (e) => {
+    const href = a.getAttribute('href');
+    if (href && href.startsWith('#')) {
+      e.preventDefault();
+      closeMenu();
+      smoothScrollTo(href);
+    }
+  });
+});
+
+// Slider (auto-play + dots + kenburns)
+(function initSlider(){
+  const slider = document.getElementById('slider');
+  if (!slider) return;
+  const slides = [...slider.querySelectorAll('.slide')];
+  if (!slides.length) return;
+
+  if (!slider.querySelector('.slide.active')) slides[0].classList.add('active');
+
+  const dotsWrap = document.getElementById('sliderDots');
+  slides.forEach((_, idx) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Slide ' + (idx+1));
+    if (idx === 0) b.classList.add('active');
+    b.addEventListener('click', () => go(idx));
+    dotsWrap.appendChild(b);
   });
 
-  // Tutup saat klik link
-  mobileNavLinks.forEach(link => link.addEventListener('click', closeMenu));
+  let i = slides.findIndex(s => s.classList.contains('active'));
+  let timer = setInterval(next, 6000);
 
-  // Tombol X
-  if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+  function next(){ go((i + 1) % slides.length); }
+  function go(n){
+    slides[i].classList.remove('active');
+    dotsWrap.children[i].classList.remove('active');
+    i = n;
+    slides[i].classList.add('active');
+    dotsWrap.children[i].classList.add('active');
+    clearInterval(timer);
+    timer = setInterval(next, 6000);
+  }
+})();
 
-  // Tutup dengan klik area gelap
-  mobileMenu.addEventListener('click', (e) => {
-    if (e.target === mobileMenu) closeMenu();
-  });
+// Reveal on scroll (stagger via CSS var --d sudah dipakai)
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold:.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-  // Tutup dengan ESC
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && mobileMenu.classList.contains('active')) closeMenu();
-  });
+// Counter animation
+function animateCounter(el){
+  const target = +el.dataset.count || 0;
+  const dur = 1500, start = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now - start)/dur);
+    el.textContent = Math.floor(target * (0.2 + 0.8*p)).toLocaleString('id-ID');
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
+document.querySelectorAll('.stat .num').forEach(el => {
+  const obs = new IntersectionObserver((e,o)=>{ if(e[0].isIntersecting){ animateCounter(el); o.disconnect(); } }, {threshold:.6});
+  obs.observe(el);
+});
 
-// ===== (Opsional) TRANSAKSI =====
-// Hanya akan aktif bila section/form transaksi benar-benar ada di halaman.
-document.addEventListener('DOMContentLoaded', () => {
-  const form  = document.getElementById('transaksiForm');
-  const tbody = document.querySelector('#riwayat tbody');
-  if (!form || !tbody) return;
+// Leaflet Map
+(function initMap(){
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
 
-  const loadTransaksi = () => {
-    fetch('transaksi.php?action=read')
-      .then(res => res.json())
-      .then(rows => {
-        tbody.innerHTML = '';
-        rows.forEach(row => {
-          tbody.insertAdjacentHTML('beforeend', `
-            <tr>
-              <td>${row.nama}</td>
-              <td>${row.jenis_sampah}</td>
-              <td>${row.jumlah}</td>
-              <td><button class="btn-hapus" data-id="${row.id_transaksi}">Hapus</button></td>
-            </tr>
-          `);
-        });
-      })
-      .catch(() => { /* diamkan jika backend belum siap */ });
-  };
+  const map = L.map('map', { scrollWheelZoom:false }).setView([-7.9539772, 110.1813977], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 
-  loadTransaksi();
+  const points = [
+    { name:'Bank Sampah Sorogaten',  coord:[-7.9490876,110.1975741] },
+    { name:'Pengepul Karangsewu',    coord:[-7.965,110.170] },
+    { name:'TPS Terpadu (contoh)',   coord:[-7.941,110.190] },
+  ];
+  points.forEach(p => L.marker(p.coord).addTo(map).bindPopup(p.name));
+})();
 
-  form.addEventListener('submit', (e) => {
+// Smooth scroll untuk anchor biasa
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click', (e)=>{
+    const href = a.getAttribute('href');
+    if (href === "#") return;
+    const el = document.querySelector(href);
+    if (!el) return;
     e.preventDefault();
-    const fd = new FormData(form);
-    fetch('transaksi.php?action=create', { method: 'POST', body: fd })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) { form.reset(); loadTransaksi(); }
-        else { alert(res.error || 'Gagal menyimpan.'); }
-      })
-      .catch(() => alert('Gagal terhubung ke server'));
-  });
-
-  tbody.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-hapus');
-    if (!btn) return;
-    const id = btn.getAttribute('data-id');
-    const fd = new FormData(); fd.append('id', id);
-    fetch('transaksi.php?action=delete', { method: 'POST', body: fd })
-      .then(() => loadTransaksi());
+    smoothScrollTo(href);
   });
 });
