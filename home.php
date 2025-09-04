@@ -1,4 +1,4 @@
-<?php /* biarkan kosong agar file bisa dieksekusi sebagai .php */ ?>
+<?php /* tidak perlu PHP khusus—biarkan kosong saja agar bisa .php */ ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -6,7 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bank Sampah Desa Karangsewu</title>
   <link rel="icon" href="../tabungansampahKU/img/logoKP.png" />
+
+  <!-- CSS lokal (pakai query agar tidak kena cache) -->
   <link rel="stylesheet" href="home.css?v=2" />
+
+  <!-- Leaflet (untuk peta) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body>
 
@@ -67,11 +72,8 @@
   <!-- Maps -->
   <section class="maps" id="maps" aria-label="Lokasi Pengepul">
     <h2>Lokasi Pengepul</h2>
-    <iframe
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3958.616302826964!2d110.267!3d-7.373!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zN8KwMjInMjIuMCJTIDExMMKwMTUnNTIuMCJF!5e0!3m2!1sid!2sid!4v0000000000000"
-      width="100%" height="320" style="border:0;" allowfullscreen="" loading="lazy"
-      referrerpolicy="no-referrer-when-downgrade" title="Peta lokasi pengepul Karangsewu">
-    </iframe>
+    <!-- Ganti iframe -> div untuk Leaflet -->
+    <div id="map" style="height: 320px; width: 100%; border-radius: 12px; overflow: hidden;"></div>
   </section>
 
   <!-- Footer -->
@@ -80,6 +82,30 @@
     <p>© 2025 Bank Sampah Karangsewu</p>
   </footer>
 
+  <!-- JS: Leaflet + file lokal (pakai query agar tidak ke-cache) -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="home.js?v=2"></script>
+
+  <!-- Init kecil: aktifkan slide pertama (jaga-jaga) + inisialisasi peta -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Pastikan slide pertama aktif
+      const slides = document.querySelectorAll('.slide');
+      if (slides.length && !document.querySelector('.slide.active')) {
+        slides[0].classList.add('active');
+      }
+
+      // Inisialisasi Leaflet
+      const map = L.map('map').setView([-7.9539772, 110.1813977], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Marker contoh
+      L.marker([-7.9490876, 110.1975741])
+        .addTo(map)
+        .bindPopup('Titik Bank Sampah Sorogaten');
+    });
+  </script>
 </body>
 </html>
