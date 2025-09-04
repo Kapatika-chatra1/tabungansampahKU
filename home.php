@@ -63,12 +63,29 @@
   </section>
 
   <!-- Features -->
+   <h2 class="tittle-fitur">Fitur</h2>
   <section class="features" aria-label="Fitur utama">
-    <div class="card">♻️ Transaksi Sampah</div>
-    <div class="card">🗺️ Lacak Pengepul</div>
-    <div class="card">🧴 Jenis Sampah</div>
+    
+    <!-- <div class="card">♻️ Transaksi Sampah</div> -->
+    <div class="card">🗺️ <b>Lacak Pengepul</b>
+      <p>Jangan biarkan sampah menumpuk! Dengan fitur Lacak Pengepul, Anda bisa langsung menemukan pengepul terdekat di sekitar lokasi Anda. Lihat profil mereka, hubungi, dan atur jadwal penjemputan <br>sampah dengan mudah.  Ubah sampah jadi uang, secepat sentuhan jari!</p>
+    </div>
+    <div class="card">🧴 <b>Jenis Sampah</b>
+      <p>Masih bingung memilah sampah? Fitur Jenis Sampah adalah panduan pintar Anda. Dapatkan informasi lengkap tentang berbagai jenis sampah—mulai dari plastik, kertas, hingga elektronik—dan cara memilahnya dengan benar. Dengan memilah sampah, Anda tidak hanya menjaga kebersihan, tetapi juga meningkatkan nilai jual sampah Anda. Yuk, jadi pahlawan lingkungan dari rumah!</p>
+    </div>
   </section>
 
+  <section class="about-section">
+  <h2>About Us</h2>
+  <p>
+    Desa Karangsewu, terletak di dataran rendah pesisir Kulon Progo, adalah wujud nyata dari keajaiban alam 
+    dan ketangguhan masyarakatnya. Nama "Karangsewu" yang berarti "seribu karang" mencerminkan kekayaan dan 
+    kekuatan pondasi desa kami. Keunggulan kami terletak pada sektor agraris dan perikanan; mulai dari hamparan 
+    sawah hijau yang membentang luas, hingga tambak udang yang produktif di sepanjang garis pantai. Kami adalah 
+    desa yang terus berkembang, mengolah kekayaan alam menjadi sumber kesejahteraan, sambil tetap menjunjung tinggi 
+    tradisi dan kearifan lokal.
+  </p>
+</section>
   <!-- Maps -->
   <section class="maps" id="maps" aria-label="Lokasi Pengepul">
     <h2>Lokasi Pengepul</h2>
