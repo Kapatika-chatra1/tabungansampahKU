@@ -29,12 +29,30 @@ if ($stmt = $conn->prepare($sql)) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>User Dashboard – Bank Sampah Karangsewu</title>
   <link rel="icon" href="../tabungansampahKU/img/logoKP.png"/>
-  <link rel="stylesheet" href="user.css?v=6"/>
+  <link rel="stylesheet" href="user.css?v=7"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    /* Modal Ganti Password */
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal__content {
+      background: #fff; padding: 20px; border-radius: 16px;
+      width: 320px; max-width: 90%; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      animation: fadeIn .3s ease;
+    }
+    .modal__content h3 { margin-top: 0; }
+    .modal__content input {
+      width:100%; margin-bottom:10px; padding:8px; border:1px solid #ccc; border-radius:8px;
+    }
+    .modal__actions { display:flex; gap:10px; margin-top:10px; }
+    @keyframes fadeIn { from{opacity:0; transform:scale(.95);} to{opacity:1; transform:scale(1);} }
+  </style>
 </head>
 <body>
 
-  <!-- TOPBAR (brand kiri, hanya tombol Keluar di kanan) -->
+  <!-- TOPBAR -->
   <div class="header">
     <div class="header__inner">
       <div class="brand">
@@ -52,7 +70,10 @@ if ($stmt = $conn->prepare($sql)) {
         <span class="hero__text">Halo, <strong><?= htmlspecialchars($_SESSION['nama']) ?></strong> 👋</span>
         <span class="hero__sub">selamat datang di dashboard Anda.</span>
       </div>
-      <span class="badge">👤 Role: User</span>
+      <div class="hero__tools">
+        <span class="badge">👤 Role: User</span>
+        <button class="btn btn--ghost" id="btnOpenPassword">🔑 Ganti Password</button>
+      </div>
     </section>
 
     <!-- STATS -->
@@ -80,7 +101,7 @@ if ($stmt = $conn->prepare($sql)) {
       </div>
     </section>
 
-    <!-- GRID: TABEL & MAP -->
+    <!-- GRID -->
     <section class="grid">
       <!-- TABEL -->
       <div class="card">
@@ -137,6 +158,23 @@ if ($stmt = $conn->prepare($sql)) {
     <p>© 2025 Bank Sampah Karangsewu</p>
   </footer>
 
+  <!-- MODAL GANTI PASSWORD -->
+  <div id="modalPassword" class="modal">
+    <div class="modal__content">
+      <h3>🔑 Ganti Password</h3>
+      <form id="formPassword">
+        <input type="password" name="old_password" placeholder="Password Sekarang" required>
+        <input type="password" name="new_password" placeholder="Password Baru" required>
+        <input type="password" name="confirm_password" placeholder="Konfirmasi Password Baru" required>
+        <div id="msgPassword" style="margin:8px 0; font-size:14px;"></div>
+        <div class="modal__actions">
+          <button type="submit" class="btn">Simpan</button>
+          <button type="button" class="btn btn--ghost" id="btnClosePassword">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -162,7 +200,6 @@ if ($stmt = $conn->prepare($sql)) {
     const searchInput = document.getElementById('searchInput');
     const btnReset    = document.getElementById('btnReset');
 
-    // isi dropdown jenis
     const jenisSet = new Set(rows.map(r => r.children[2]?.textContent.trim()).filter(Boolean));
     [...jenisSet].sort().forEach(j => {
       const o = document.createElement('option'); o.value=j; o.textContent=j; filterJenis.appendChild(o);
@@ -172,7 +209,6 @@ if ($stmt = $conn->prepare($sql)) {
       const q  = searchInput.value.trim().toLowerCase();
       const jf = filterJenis.value;
       let showCount = 0;
-
       rows.forEach(tr => {
         const nama  = tr.children[1]?.textContent.toLowerCase() || '';
         const jenis = tr.children[2]?.textContent || '';
@@ -199,20 +235,50 @@ if ($stmt = $conn->prepare($sql)) {
           return `"${t}"`;
         }).join(','))
       ).join('\r\n');
-
       const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob); a.download = 'riwayat-transaksi.csv'; a.click();
       URL.revokeObjectURL(a.href);
     });
 
-    // ===== MAP (Leaflet) =====
+    // ===== MAP =====
     const map = L.map('map').setView([-7.9539772,110.1813977], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:'© OpenStreetMap contributors'
     }).addTo(map);
-
     L.marker([-7.9490876,110.1975741]).addTo(map).bindPopup('Titik Bank Sampah Sorogaten');
+
+    // ===== MODAL PASSWORD =====
+    const modalPassword = document.getElementById('modalPassword');
+    document.getElementById('btnOpenPassword').addEventListener('click', ()=> {
+      modalPassword.style.display = 'flex';
+    });
+    document.getElementById('btnClosePassword').addEventListener('click', ()=> {
+      modalPassword.style.display = 'none';
+    });
+
+    document.getElementById('formPassword').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const data = new FormData(form);
+      const msgEl = document.getElementById('msgPassword');
+      msgEl.style.color = "black";
+      msgEl.textContent = "⏳ Memproses...";
+
+      try {
+        const res = await fetch('ganti_password.php', { method:'POST', body:data });
+        const result = await res.json();
+        msgEl.style.color = result.success ? "green" : "red";
+        msgEl.textContent = result.message;
+        if(result.success){
+          form.reset();
+          setTimeout(()=> modalPassword.style.display='none', 1500);
+        }
+      } catch(err){
+        msgEl.style.color = "red";
+        msgEl.textContent = "❌ Terjadi kesalahan koneksi.";
+      }
+    });
   });
   </script>
 </body>
