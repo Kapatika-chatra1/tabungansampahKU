@@ -1,4 +1,28 @@
-<?php /* kosongkan saja agar bisa dieksekusi sebagai .php */ ?>
+<?php 
+require 'koneksi.php';
+// === HITUNG TOTAL STATISTIK ===
+
+// total kg sampah terkelola
+$totalKg = 0;
+if ($res = $conn->query("SELECT SUM(jumlah_setoran) AS total FROM `transaction`")) {
+    $row = $res->fetch_assoc();
+    $totalKg = (int)($row['total'] ?? 0);
+}
+
+// total transaksi
+$totalTransaksi = 0;
+if ($res = $conn->query("SELECT COUNT(*) AS total FROM `transaction`")) {
+    $row = $res->fetch_assoc();
+    $totalTransaksi = (int)($row['total'] ?? 0);
+}
+
+// pengepul aktif (jumlah user unik yang sudah setor)
+$totalPengepul = 0;
+if ($res = $conn->query("SELECT COUNT(DISTINCT id_user) AS total FROM `transaction`")) {
+    $row = $res->fetch_assoc();
+    $totalPengepul = (int)($row['total'] ?? 0);
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -57,7 +81,6 @@
       <li><a href="#kontak">Kontak</a></li>
       <li class="split"></li>
       <li><a href="login.php" class="btn btn-ghost w-full ripple">Masuk</a></li>
-      <!-- kalau tetap ingin “Daftar”, arahkan ke login juga sesuai permintaan -->
       <li><a href="login.php" class="btn btn-primary w-full ripple">Daftar</a></li>
     </ul>
   </div>
@@ -70,29 +93,27 @@
         <h1>Kelola Sampah, Wujudkan Desa <span class="grad">Bersih</span> & <span class="grad">Sejahtera</span></h1>
         <p>Bersama masyarakat Karangsewu, kita ciptakan lingkungan sehat dan bernilai ekonomi melalui pengelolaan sampah yang mudah, transparan, dan menguntungkan.</p>
 
-        <!-- 3 tombol (rapih di mobile grid 3 kolom) -->
+        <!-- 3 tombol -->
         <div class="hero-cta">
-          <a href="login.php" class="btn btn-primary ripple">Mulai Gabung</a>
-          <a href="login.php" class="btn btn-ghost ripple">Masuk</a>
+          <a href="login.php" class="btn btn-primary ripple">Masuk</a>
+          <!-- <a href="login.php" class="btn btn-ghost ripple">Masuk</a> -->
           <a href="#maps" class="btn btn-outline ripple">Lihat Peta</a>
         </div>
-
-        <!-- Stats -->
-        <div class="stats">
-          <div class="stat reveal" style="--d:.0s">
-            <div class="num" data-count="1200">0</div>
-            <div class="label">Kg Sampah Terkelola</div>
-          </div>
-          <div class="stat reveal" style="--d:.1s">
-            <div class="num" data-count="340">0</div>
-            <div class="label">Transaksi</div>
-          </div>
-          <div class="stat reveal" style="--d:.2s">
-            <div class="num" data-count="18">0</div>
-            <div class="label">Pengepul Aktif</div>
-          </div>
-        </div>
-      </div>
+        <!-- stats -->
+<div class="stats">
+  <div class="stat reveal" style="--d:.0s">
+    <div class="num" data-count="<?= $totalKg ?>">0</div>
+    <div class="label">Kg Sampah Terkelola</div>
+  </div>
+  <div class="stat reveal" style="--d:.1s">
+    <div class="num" data-count="<?= $totalTransaksi ?>">0</div>
+    <div class="label">Transaksi</div>
+  </div>
+  <div class="stat reveal" style="--d:.2s">
+    <div class="num" data-count="<?= $totalPengepul ?>">0</div>
+    <div class="label">Nasabah Aktif</div>
+  </div>
+</div>
 
       <!-- Slider -->
       <div class="hero-slider reveal">

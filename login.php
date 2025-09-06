@@ -79,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="button" class="tab active" role="tab" aria-selected="true"
                 aria-controls="loginForm" id="tab-login"
                 onclick="showForm('login')">Masuk</button>
-        <button type="button" class="tab" role="tab" aria-selected="false"
+        <!-- <button type="button" class="tab" role="tab" aria-selected="false"
                 aria-controls="registerForm" id="tab-register"
-                onclick="showForm('register')">Daftar</button>
+                onclick="showForm('register')">Daftar</button> -->
       </div>
 
       <!-- Form Login -->
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
       </form>
 
-      <!-- Form Register -->
+      <!-- Form Register 
       <form id="registerForm" class="form" action="register.php" method="POST" aria-labelledby="tab-register">
         <h2>Bergabung dengan Kami</h2>
         <p>Daftarkan diri Anda untuk memulai</p>
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="text" inputmode="numeric" name="no_hp" placeholder="Nomor HP" required>
         <input type="password" name="password" placeholder="Minimal 6 karakter" minlength="6" required>
         <button type="submit" class="btn">Daftar Sekarang</button>
-      </form>
+      </form> -->
     </div>
   </div>
 

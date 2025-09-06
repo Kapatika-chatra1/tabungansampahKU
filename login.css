@@ -112,31 +112,48 @@ body{
 }
 .alert a{ font-weight:700; color:#1b5e20; text-decoration:underline; }
 
-/* Tabs pill */
-.tabs{
-  --i:0; /* diubah via JS */
-  width:min(420px, 90%); background:#fff; border-radius:999px; padding:6px;
-  border:1px solid var(--line); box-shadow:var(--shadow);
-  display:grid; grid-template-columns:1fr 1fr; position:relative; margin-bottom:16px;
+.tabs {
+  width: min(420px, 90%); 
+  background:#fff; 
+  border-radius:999px; 
+  padding:6px;
+  border:1px solid var(--line); 
+  box-shadow:var(--shadow);
+  display: flex; 
+  justify-content: center;   /* tombol di tengah */
+  align-items: center; 
+  margin-bottom:16px;
+  position: relative;
 }
-.tabs::after{
-  content:""; position:absolute; top:6px; left:6px; height:calc(100% - 12px);
-  width:calc(50% - 6px); border-radius:999px;
-  background:linear-gradient(135deg, #e8f5e9, #ffffff);
-  border:1px solid var(--line);
-  transform: translateX(calc(var(--i) * 100%));
-  transition: transform .25s cubic-bezier(.4,0,.2,1);
+
+.tabs::after {
+  display: none; /* hilangkan highlight slider karena tab tinggal 1 */
 }
-.tab{
-  appearance:none; border:0; background:transparent; padding:12px 10px;
-  font-weight:800; cursor:pointer; position:relative; z-index:1; border-radius:999px;
-  color:#1d2a20; letter-spacing:.2px;
+
+.tab.active { 
+  color:#1b5e20; 
+  appearance:none; 
+  border:0; 
+  background:transparent; 
+  padding:12px 24px;
+  font-weight:800; 
+  cursor:pointer; 
+  position:relative; 
+  z-index:1; 
+  border-radius:999px;
+  color:#1d2a20; 
+  letter-spacing:.2px;
+
+  width: auto;     /* ⬅️ pastikan tidak full */
+  margin: 0 auto;  /* ⬅️ ini yang bikin dia ke tengah */
+  display: inline-block; /* ⬅️ penting biar ikut konten */
 }
-.tab.active{ color:#1b5e20; }
+
 
 /* Auth card */
 .form{
-  display:none; flex-direction:column; gap:10px;
+  display:none; flex-direction:column; 
+  gap:10px;
   width:min(420px, 90%);
   background:rgba(255,255,255,.88);
   border:1px solid var(--line);
