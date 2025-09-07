@@ -14,9 +14,16 @@ if ($stmt = $conn->prepare("SELECT saldo FROM saldo WHERE id_user = ? LIMIT 1"))
 }
 
 $riwayat = [];
-$sql = "SELECT t.id_trans AS id_transaksi,a.nama AS nama_user,t.jenis_sampah,t.jumlah_setoran
-        FROM `transaction` t JOIN account a ON t.id_user=a.id_user
-        WHERE t.id_user=? ORDER BY t.id_trans DESC";
+$sql = "SELECT t.id_trans AS id_transaksi,
+       a.nama AS nama_user,
+       j.jenis AS jenis_sampah,
+       t.jumlah_setoran
+FROM `transaction` t
+JOIN account a ON t.id_user = a.id_user
+JOIN jenis_sampah j ON t.id_jenis = j.id_jenis
+WHERE t.id_user = ?
+ORDER BY t.id_trans DESC;
+";
 if ($stmt = $conn->prepare($sql)) {
   $stmt->bind_param("i",$id_user); $stmt->execute();
   $r = $stmt->get_result(); while($row=$r->fetch_assoc()) $riwayat[]=$row; $stmt->close();

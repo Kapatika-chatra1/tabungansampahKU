@@ -94,11 +94,18 @@ if (isset($_GET['action'])) {
 
     // ================= READ TRANSAKSI =================
 elseif ($action === 'read') {
-    $sql = "SELECT t.id_trans, a.nama, t.jenis_sampah, t.tanggal, t.jumlah_setoran
-            FROM `transaction` t
-            JOIN account a ON t.id_user = a.id_user
-            WHERE t.tanggal >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
-            ORDER BY t.id_trans";
+    $sql = "SELECT 
+    t.id_trans, 
+    a.nama, 
+    j.jenis AS jenis_sampah, 
+    t.tanggal, 
+    t.jumlah_setoran
+FROM `transaction` t
+JOIN account a ON t.id_user = a.id_user
+JOIN jenis_sampah j ON t.id_jenis = j.id_jenis
+WHERE t.tanggal >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
+ORDER BY t.id_trans;
+";
     $res = $conn->query($sql);
     $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
     echo json_encode($data);
@@ -338,6 +345,10 @@ elseif ($action === 'read') {
       <input type="text" id="user_alamat" placeholder="Alamat" required>
       <button type="submit">Tambah User</button>
     </form>
+  </div>
+
+  <div class="add_sampah">
+    <h2>Tambah jenis sampah baru</h2>
   </div>
   </section>
 

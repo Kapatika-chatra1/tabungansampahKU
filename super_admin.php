@@ -3,7 +3,7 @@ session_start();
 require 'koneksi.php';
 
 // pastikan hanya admin
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'super_admin') {
     http_response_code(403);
     echo json_encode(["error" => "Unauthorized"]);
     exit();

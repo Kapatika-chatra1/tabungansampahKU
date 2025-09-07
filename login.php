@@ -6,31 +6,44 @@ require 'koneksi.php';
 $login_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $no_hp   = trim($_POST['no_hp'] ?? '');
+    $no_hp    = trim($_POST['no_hp'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
     if ($no_hp === '' || $password === '') {
         $login_error = 'Nomor HP dan password wajib diisi!';
     } else {
-        $sql  = "SELECT * FROM account WHERE no_hp = ?";
+        $sql = "SELECT * FROM account WHERE no_hp = ?";
         $stmt = $conn->prepare($sql);
+
         if ($stmt) {
             $stmt->bind_param("s", $no_hp);
             $stmt->execute();
-            $result = $stmt->get_result();
 
+            // get_result() but fallback bisa ditambahkan jika environment tidak mendukung
+            $result = $stmt->get_result();
             $akun = null;
             if ($result && $result->num_rows === 1) {
                 $akun = $result->fetch_assoc();
             }
 
+            $stmt->close();
+
             if ($akun) {
                 if (password_verify($password, $akun['password'])) {
+                    // set session
                     $_SESSION['id_user'] = $akun['id_user'];
                     $_SESSION['nama']    = $akun['nama'];
                     $_SESSION['role']    = $akun['role'];
                     session_write_close();
-                    $redirect = ($akun['role'] === 'admin') ? 'admin.php' : 'user.php';
+
+                    // mapping role -> page (mudah ditambah nantinya)
+                    $redirects = [
+                        'super_admin' => 'super_admin.php',
+                        'admin'       => 'admin.php',
+                        'user'        => 'user.php'
+                    ];
+                    $redirect = $redirects[$akun['role']] ?? 'user.php';
+
                     header("Location: $redirect");
                     exit();
                 } else {
@@ -39,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $login_error = 'Akun tidak ditemukan!';
             }
-            $stmt->close();
         } else {
             $login_error = 'Kesalahan server. Coba lagi.';
         }
@@ -74,16 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Kanan -->
     <div class="right">
-      <!-- Tabs -->
-      <!-- <div class="tabs" role="tablist" aria-label="Pilih formulir">
-        <button type="button" class="tab active" role="tab" aria-selected="true"
-                aria-controls="loginForm" id="tab-login"
-                onclick="showForm('login')">Masuk</button>
-        <button type="button" class="tab" role="tab" aria-selected="false"
-                aria-controls="registerForm" id="tab-register"
-                onclick="showForm('register')">Daftar</button> -->
-      <!-- </div> -->
-
       <!-- Form Login -->
       <form id="loginForm" class="form active" method="POST" aria-labelledby="tab-login" autocomplete="on">
         <h2>Selamat Datang Kembali</h2>
@@ -98,15 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
       </form>
 
-      <!-- Form Register 
-      <form id="registerForm" class="form" action="register.php" method="POST" aria-labelledby="tab-register">
-        <h2>Bergabung dengan Kami</h2>
-        <p>Daftarkan diri Anda untuk memulai</p>
-        <input type="text" name="nama" placeholder="Nama Lengkap" required>
-        <input type="text" inputmode="numeric" name="no_hp" placeholder="Nomor HP" required>
-        <input type="password" name="password" placeholder="Minimal 6 karakter" minlength="6" required>
-        <button type="submit" class="btn">Daftar Sekarang</button>
-      </form> -->
     </div>
   </div>
 
