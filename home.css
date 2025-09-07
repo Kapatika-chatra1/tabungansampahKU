@@ -276,14 +276,16 @@ img{max-width:100%; display:block}
 }
 .hero-grid{
   display:grid; 
-  grid-template-columns: 1.05fr .95fr; 
-  gap:28px; 
-  align-items:center
+  grid-template-columns: 1.05fr; 
+ 
+  align-items:center;
+  justify-content: center;
 }
 .hero-text h1{
   font-size:44px; 
   line-height:1.15; 
   margin:10px 0 10px;
+  justify-self: center;
 }
 .hero-text p{color:#2a3c30; 
   margin:0 0 16px;
@@ -321,7 +323,8 @@ img{max-width:100%; display:block}
 .stats{
   display:flex; 
   gap:22px; 
-  margin-top:18px; 
+  margin-top:18px;
+  margin-bottom: 20px; 
   flex-wrap:wrap;
 }
 .stat{background:#fff; 
