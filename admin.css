@@ -1,24 +1,20 @@
 html, body {
     height: 100%;
-}
-
-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-main {
-    flex: 1;
-}
-
-body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #f1f8e9;
     color: #2e7d32;
 }
 
+/* Layout dasar */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+main { flex: 1; }
+
+/* Header */
 header {
     display: flex;
     justify-content: space-between;
@@ -27,35 +23,41 @@ header {
     color: white;
     padding: 15px 30px;
 }
-
 header nav a {
     margin-left: 20px;
     text-decoration: none;
     color: white;
     font-weight: bold;
 }
-
 .user {
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: center;
 }
+.btn-logout {
+    color: white;
+    background-color: red;
+    padding: 10px;
+    border-radius: 10px;
+}
 
+/* Hero */
 .hero {
     text-align: center;
     padding: 60px 20px;
-    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(46, 125, 50, 0.7)), url('https://picsum.photos/1200/400?green') no-repeat center/cover;
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(46, 125, 50, 0.7)), 
+                url('https://picsum.photos/1200/400?green') no-repeat center/cover;
     color: white;
 }
 
+/* Features */
 .features {
     display: flex;
     justify-content: center;
     gap: 20px;
     padding: 40px;
 }
-
 .card {
     flex: 1;
     text-align: center;
@@ -65,138 +67,116 @@ header nav a {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.transaksi {
+/* ====== FORM & TABLE LAYOUT ====== */
+
+/* 3 form sejajar */
+.forms-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
     padding: 40px;
+    flex-wrap: wrap;
     background: white;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
 }
-
-.container {
-    display: flex;
-    justify-content: space-around;
-    /* memberi jarak kanan-kiri */
-    align-items: flex-start;
-    /* agar posisi atas sejajar */
-    gap: 50px;
-    /* jarak antar form */
-    margin-top: 200px;
-}
-
-.transaksi form,
-.users form {
-    width: 550px;
+.forms-container form {
+    flex: 1;
+    min-width: 280px;
+    max-width: 350px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
-
-.transaksi input,
-.transaksi select,
-.transaksi button {
+.forms-container input,
+.forms-container select,
+.forms-container button {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 6px;
-    max-width: 100%;
 }
-
-.transaksi button {
+.forms-container button {
     background: #2e7d32;
     color: white;
     cursor: pointer;
 }
 
-.transaksi table {
+/* 2 tabel sejajar */
+.tables-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 20px;
+    padding: 40px;
+    flex-wrap: wrap;
+}
+.tables-container table {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+    background: #fff;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Riwayat transaksi full width */
+.tables {
+    padding: 40px;
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.tables table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 15px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.transaksi th,
-.transaksi td {
+/* ====== TABLE STYLE ====== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+table th, table td {
     border: 1px solid #ccc;
-    padding: 10px;
+    padding: 8px;
     text-align: center;
 }
+table th {
+    background: #f2f2f2;
+}
+.btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn-edit { background: #2196F3; color: white; }
+.btn-delete { background: #f44336; color: white; }
 
+/* Maps section */
 .maps {
     padding: 40px;
     background: #f9fbe7;
 }
 
-.transaksi form,
-.users form {
-    /*used (form transaksi)*/
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.users form {
-    /*used(tambah user baru)*/
-    width: 550px;
-    display: flex;
-    gap: 1px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    flex-direction: column;
-}
-
-.users input,
-.users select,
-.users button {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    margin-top: 10px;
-}
-
-.users button {
-    background: #2e7d32;
-    color: white;
-    cursor: pointer;
-}
-
-.btn-logout {
-    color: white;
-    background-color: red;
-    padding: 10px;
-    border-radius: 10px;
-}
-
-.history{
-    padding: 50px;
-    margin: 20px;
-}
-
-table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 15px;
-    }
-    table th, table td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    table th {
-      background: #f2f2f2;
-    }
-    .btn {
-      padding: 5px 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .btn-edit { 
-        background: #2196F3; 
-        color: white; 
-    }
-    .btn-delete {
-         background: #f44336; 
-         color: white; }
-         
-
+/* Footer */
 footer {
     text-align: center;
     padding: 20px;
@@ -207,10 +187,18 @@ footer {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width:1024px){
-  .grid{ grid-template-columns:1fr; }
+  .forms-container,
+  .tables-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .forms-container form,
+  .tables-container table {
+    max-width: 90%;
+  }
 }
 @media (max-width:768px){
-  .stats{ grid-template-columns:1fr; }
-  .btn{ min-width:auto; padding:10px 12px; }
-  .brand__title{ font-size:16px; }
+  .btn { min-width:auto; padding:10px 12px; }
+  .hero h1 { font-size: 22px; }
+  .hero p { font-size: 14px; }
 }

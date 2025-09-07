@@ -22,7 +22,7 @@ FROM `transaction` t
 JOIN account a ON t.id_user = a.id_user
 JOIN jenis_sampah j ON t.id_jenis = j.id_jenis
 WHERE t.id_user = ?
-ORDER BY t.id_trans DESC;
+ORDER BY t.id_trans ASC;
 ";
 if ($stmt = $conn->prepare($sql)) {
   $stmt->bind_param("i",$id_user); $stmt->execute();
