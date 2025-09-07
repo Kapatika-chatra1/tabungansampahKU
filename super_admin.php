@@ -255,8 +255,8 @@ elseif ($action === 'read') {
             exit();
         }
 
-        $password = password_hash("user123", PASSWORD_DEFAULT);
-        $role = "user";
+        $password = password_hash("Karangsewu777", PASSWORD_DEFAULT);
+        $role = "admin";
 
         $ins = $conn->prepare("INSERT INTO account (nama, no_hp, alamat, password, role) VALUES (?, ?, ?, ?, ?)");
         $ins->bind_param("sssss", $nama, $no_hp, $alamat, $password, $role);
