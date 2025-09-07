@@ -88,11 +88,11 @@ body{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:40px 20px;
 }
-.right::before{
+/* .right::before{
   content:""; position:absolute; inset:auto; right:-120px; top:-120px; width:360px; height:360px;
   border-radius:50%; background:radial-gradient(closest-side, rgba(102,187,106,.18), transparent 70%);
   filter:blur(28px);
-}
+} */
 
 /* Alert */
 .alert{
@@ -208,6 +208,8 @@ input:active{ transform:scale(.997) }
   background:rgba(255,255,255,.55); animation:rip .6s ease-out;
   pointer-events:none;
 }
+
+
 @keyframes rip{
   to{ transform:scale(3); opacity:0; }
 }

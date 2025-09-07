@@ -81,10 +81,10 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.type = "button";
     btn.className = "eye-btn";
     btn.setAttribute("aria-label","Lihat/Sembunyikan password");
-    btn.innerHTML = "👁️";
+    btn.innerHTML = "🔒";
     btn.addEventListener("click", () => {
       inp.type = (inp.type === "password") ? "text" : "password";
-      btn.innerHTML = (inp.type === "password") ? "👁️" : "🙈";
+      btn.innerHTML = (inp.type === "password") ? "🔒" : "🔓";
       inp.focus();
     });
     wrap.appendChild(btn);

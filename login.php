@@ -75,14 +75,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Kanan -->
     <div class="right">
       <!-- Tabs -->
-      <div class="tabs" role="tablist" aria-label="Pilih formulir">
+      <!-- <div class="tabs" role="tablist" aria-label="Pilih formulir">
         <button type="button" class="tab active" role="tab" aria-selected="true"
                 aria-controls="loginForm" id="tab-login"
                 onclick="showForm('login')">Masuk</button>
-        <!-- <button type="button" class="tab" role="tab" aria-selected="false"
+        <button type="button" class="tab" role="tab" aria-selected="false"
                 aria-controls="registerForm" id="tab-register"
                 onclick="showForm('register')">Daftar</button> -->
-      </div>
+      <!-- </div> -->
 
       <!-- Form Login -->
       <form id="loginForm" class="form active" method="POST" aria-labelledby="tab-login" autocomplete="on">
