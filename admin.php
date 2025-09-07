@@ -284,29 +284,6 @@ elseif ($action === 'read') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin - Bank Sampah Karangsewu</title>
   <link rel="stylesheet" href="admin.css">
-  <style>
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 15px;
-    }
-    table th, table td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    table th {
-      background: #f2f2f2;
-    }
-    .btn {
-      padding: 5px 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .btn-edit { background: #2196F3; color: white; }
-    .btn-delete { background: #f44336; color: white; }
-  </style>
 </head>
 <body>
   <!-- Header -->
@@ -364,7 +341,7 @@ elseif ($action === 'read') {
   </div>
   </section>
 
-<section>
+<section class="history">
     <h3>Riwayat Transaksi</h3>
     <table id="riwayat">
       <thead>
