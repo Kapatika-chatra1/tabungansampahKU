@@ -31,24 +31,7 @@ if ($stmt = $conn->prepare($sql)) {
   <link rel="icon" href="../tabungansampahKU/img/logoKP.png"/>
   <link rel="stylesheet" href="user.css?v=7"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <style>
-    /* Modal Ganti Password */
-    .modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      display: none; align-items: center; justify-content: center; z-index: 1000;
-    }
-    .modal__content {
-      background: #fff; padding: 20px; border-radius: 16px;
-      width: 320px; max-width: 90%; box-shadow: 0 4px 16px rgba(0,0,0,.2);
-      animation: fadeIn .3s ease;
-    }
-    .modal__content h3 { margin-top: 0; }
-    .modal__content input {
-      width:100%; margin-bottom:10px; padding:8px; border:1px solid #ccc; border-radius:8px;
-    }
-    .modal__actions { display:flex; gap:10px; margin-top:10px; }
-    @keyframes fadeIn { from{opacity:0; transform:scale(.95);} to{opacity:1; transform:scale(1);} }
-  </style>
+  
 </head>
 <body>
 
