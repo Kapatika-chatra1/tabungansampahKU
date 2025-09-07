@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 04, 2025 at 07:13 AM
+-- Generation Time: Sep 06, 2025 at 10:10 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -44,10 +44,11 @@ INSERT INTO `account` (`id_user`, `nama`, `password`, `no_hp`, `alamat`, `role`)
 (1, 'Farel asu', '0', '085156061082', '', 'user'),
 (2, 'farel', '0', '085183205606', '', 'user'),
 (3, 'reel', '$2y$10$u/4hCS8f.9SWJZ8byJbncezsVjGrz6tmHk5bKtZxZuRoPs8pVp0Ey', '081212341234', '', 'admin'),
-(4, 'falihKlitih', '$2y$10$grKuH/oI.HwODytsLYPftOsDmYF7vYJseLBFsS9o8NXpXoA89tLoa', '083412341234', '', 'user'),
+(4, 'falihKlitih', '$2y$10$Ft.QjK6Z8Ob9MwdGuT9I0ucQRcthbPIINxTfqYR7D5H95Y2Fk10Mq', '083412341234', '', 'user'),
 (5, 'taurot', '$2y$10$bIFfV0dIGX8wH5XXCmyOkunPqj8cPCnBjc2b4VH49jASKhi3EH2ci', '081256065727', 'dalen rt 25', 'user'),
 (6, 'Guntur', '$2y$10$kwuoaqDUqnkdpz.tLuhsG.N4qZozTjIPZBvqyO/usQda.A0I6A5mO', '089157275605', '', 'user'),
-(7, 'Putri Kudus', '$2y$10$fFE2QKaW2E73p.yhxBIWF.svluNdtkLVUtZIkbMW4o1Ct.wIUdIH2', '089458923126', '', 'user');
+(7, 'Putri Kudus', '$2y$10$fFE2QKaW2E73p.yhxBIWF.svluNdtkLVUtZIkbMW4o1Ct.wIUdIH2', '089458923126', '', 'user'),
+(8, 'Sorogaten II', '$2y$10$ntRl2Vnx4eg3A/i6eLHBR.dclow5x3E4KcuI/uMGpAGLDwsq7H4/C', '081312341234', 'Padukuhan Sorogaten II', 'user');
 
 -- --------------------------------------------------------
 
@@ -80,8 +81,9 @@ CREATE TABLE `saldo` (
 --
 
 INSERT INTO `saldo` (`id_saldo`, `id_user`, `nama`, `saldo`) VALUES
-(1, 4, 'falihKlitih', 310000),
-(2, 7, 'Putri Kudus', 1146000);
+(1, 4, 'falihKlitih', 358000),
+(2, 7, 'Putri Kudus', 1146000),
+(3, 8, 'Sorogaten II', 140000);
 
 -- --------------------------------------------------------
 
@@ -103,9 +105,7 @@ CREATE TABLE `transaction` (
 --
 
 INSERT INTO `transaction` (`id_trans`, `id_user`, `no_hp`, `jenis_sampah`, `tanggal`, `jumlah_setoran`) VALUES
-(1, 3, '081212341234', 'Botol Plastik', '2025-09-04 05:12:12.443082', 25),
-(3, 4, '083412341234', 'Aluminium', '2025-09-04 05:12:12.443082', 21),
-(5, 2, '085183205606', 'Kayu', '2025-09-04 05:12:12.443082', 120),
+(3, 4, '083412341234', 'Botol Plastik', '2025-09-04 05:12:12.443082', 21),
 (6, 4, '083412341234', 'Botol Plastik', '2025-09-04 05:12:12.443082', 10),
 (7, 4, '083412341234', 'Botol Plastik', '2025-09-04 05:12:12.443082', 12),
 (8, 5, '081256065727', 'kertas', '2025-09-04 05:12:12.443082', 23),
@@ -120,7 +120,9 @@ INSERT INTO `transaction` (`id_trans`, `id_user`, `no_hp`, `jenis_sampah`, `tang
 (19, 7, '089458923126', 'Botol Plastik', '2025-09-04 05:12:12.443082', 11),
 (20, 7, '089458923126', 'Botol Plastik', '2025-09-04 05:12:12.443082', 11),
 (21, 7, '089458923126', 'Botol Plastik', '2025-09-04 05:12:12.443082', 11),
-(22, 7, '089458923126', 'Botol Plastik', '2025-09-04 05:12:24.000000', 11);
+(22, 7, '089458923126', 'Botol Plastik', '2025-09-04 05:12:24.000000', 11),
+(23, 8, '081312341234', 'Aluminium', '2025-09-04 06:48:06.000000', 20),
+(24, 4, '083412341234', 'kertas', '2025-09-06 19:18:59.000000', 30);
 
 --
 -- Indexes for dumped tables
@@ -166,7 +168,7 @@ ALTER TABLE `transaction`
 -- AUTO_INCREMENT for table `account`
 --
 ALTER TABLE `account`
-  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `history`
@@ -178,13 +180,13 @@ ALTER TABLE `history`
 -- AUTO_INCREMENT for table `saldo`
 --
 ALTER TABLE `saldo`
-  MODIFY `id_saldo` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_saldo` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `transaction`
 --
 ALTER TABLE `transaction`
-  MODIFY `id_trans` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id_trans` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

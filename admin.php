@@ -358,8 +358,6 @@ elseif ($action === 'read') {
     </table>
   </section>
 
-  
-
   <footer id="kontak">
     <p>📍 Desa Karangsewu | 🌐 @banksampahkarangsewu</p>
     <p>© 2025 Bank Sampah Karangsewu</p>
