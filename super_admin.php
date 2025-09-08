@@ -314,15 +314,17 @@ elseif ($action === 'read') {
   </section>
   
           <!-- User -->
-  <div class="users" id="users">
+  <div class="container">
+  <div class="form-card">
     <h2>Tambah Admin Baru</h2>
-    <form id="userForm">
+    <form class="users">
       <input type="text" id="user_nama" placeholder="Nama" required>
       <input type="text" id="user_hp" placeholder="No HP" required>
       <input type="text" id="user_alamat" placeholder="Alamat" required>
       <button type="submit">Tambah Admin</button>
     </form>
   </div>
+</div>
   </section>
 
   <footer id="kontak">

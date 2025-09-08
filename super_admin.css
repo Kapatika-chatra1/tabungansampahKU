@@ -75,16 +75,17 @@ header nav a {
 
 .container {
     display: flex;
-    justify-content: space-around;
-    /* memberi jarak kanan-kiri */
-    align-items: flex-start;
-    /* agar posisi atas sejajar */
+    justify-content: center;    /* Tengah horizontal */
+    align-items: center;        /* Tengah vertikal */
     gap: 50px;
-    /* jarak antar form */
-    margin-top: 200px;
+    margin-top: 0;
+    min-height: 50vh;           /* Biar tetap di tengah jika konten sedikit */
 }
 
-.transaksi form,
+.users {
+    padding: 40px;
+    background: #e8f5e9;
+}
 .users form {
     width: 550px;
     display: flex;
@@ -92,39 +93,12 @@ header nav a {
     gap: 10px;
 }
 
-.transaksi input,
-.transaksi select,
-.transaksi button {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-width: 100%;
-}
-
-.transaksi button {
-    background: #2e7d32;
-    color: white;
-    cursor: pointer;
-}
-
-.transaksi table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.transaksi th,
-.transaksi td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: center;
-}
 
 .maps {
     padding: 40px;
     background: #f9fbe7;
 }
 
-.transaksi form,
 .users form {
     /*used (form transaksi)*/
     display: flex;
@@ -142,6 +116,25 @@ header nav a {
     flex-direction: column;
 }
 
+/* Card untuk form */
+.form-card {
+    background: #fff;
+    padding: 32px 28px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(46,125,50,0.10);
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.form-card h2 {
+    margin-bottom: 18px;
+    color: #2e7d32;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+}
+
 .users input,
 .users select,
 .users button {
@@ -151,10 +144,37 @@ header nav a {
     margin-top: 10px;
 }
 
+.users input,
+.users select {
+    padding: 12px;
+    border: 1px solid #b2dfdb;
+    border-radius: 8px;
+    margin-top: 0;
+    font-size: 16px;
+    background: #f9fbe7;
+    transition: border-color .2s;
+}
+.users input:focus,
+.users select:focus {
+    border-color: #2e7d32;
+    outline: none;
+}
+
 .users button {
-    background: #2e7d32;
+    background: linear-gradient(90deg, #388e3c, #2e7d32);
     color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
     cursor: pointer;
+    font-size: 16px;
+    margin-top: 8px;
+    box-shadow: 0 2px 8px rgba(46,125,50,0.08);
+    transition: background .2s;
+}
+.users button:hover {
+    background: linear-gradient(90deg, #43a047, #388e3c);
 }
 
 .btn-logout {
