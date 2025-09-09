@@ -603,7 +603,6 @@ body{
 .sa-footer{ 
   text-align:center; 
   color:var(--muted); 
-<<<<<<< HEAD
   padding:18px 8px; 
 }
 .sa-footer a{
@@ -618,10 +617,6 @@ body{
   border-radius: 10px;
 }
 
-=======
-  padding:18px 8px 
-}
->>>>>>> 9fd25d9b25848f31e3d3891102444d4fc56ce07e
 
 /* Responsive */
 @media (max-width:1100px){
