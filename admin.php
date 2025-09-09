@@ -260,28 +260,6 @@ if (isset($_GET['action'])) {
         exit();
     }
 
-    // ================= CREATE JENIS SAMPAH =================
-    elseif ($action === 'createJenis') {
-        $id_kategori = (int) ($_POST['id_kategori'] ?? 0);
-        $nama_jenis  = trim($_POST['nama_jenis'] ?? '');
-        $harga       = (int) ($_POST['harga'] ?? 0);
-
-        if ($id_kategori <= 0 || $nama_jenis === '' || $harga <= 0) {
-            echo json_encode(["error" => "Data tidak lengkap atau harga tidak valid"]);
-            exit();
-        }
-
-        $ins = $conn->prepare("INSERT INTO jenis_sampah (id_kategori, jenis, harga) VALUES (?, ?, ?)");
-        $ins->bind_param("isi", $id_kategori, $nama_jenis, $harga);
-
-        if ($ins->execute()) {
-            echo json_encode(["success" => true]);
-        } else {
-            echo json_encode(["error" => "Gagal menambah jenis sampah: " . $ins->error]);
-        }
-        exit();
-    }
-
     // ================= READ USER =================
     elseif ($action === 'readUser') {
         $sql = "SELECT id_user, nama, no_hp, alamat, role FROM account ORDER BY id_user ASC";
@@ -367,23 +345,6 @@ if (isset($_GET['action'])) {
     <input type="text" id="user_alamat" placeholder="Alamat" required>
     <button type="submit">Tambah User</button>
   </form>
-
-  <!-- Tambah Jenis Sampah -->
-  <form id="sampahForm">
-  <label for="sampah_kategori">Kategori:</label>
-  <select id="sampah_kategori" required>
-    <option value="">-- Pilih Kategori --</option>
-    <!-- opsi kategori akan diisi JS -->
-  </select>
-
-  <label for="sampah_nama">Nama Jenis Sampah:</label>
-  <input type="text" id="sampah_nama" placeholder="Nama jenis sampah" required>
-
-  <label for="sampah_harga">Harga per kg (Rp):</label>
-  <input type="number" id="sampah_harga" placeholder="Harga" min="1" required>
-
-  <button type="submit">Tambah Jenis Sampah</button>
-</form>
 
 </div>
 

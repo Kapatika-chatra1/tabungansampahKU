@@ -1,10 +1,14 @@
-// super_admin.js (v3) — Bank Sampah Karangsewu Super Admin
+// super_admin.js v5 — Bank Sampah Karangsewu Super Admin
 (() => {
   const API = 'super_admin.php';
 
   // ===== Helpers =====
   const $ = (s, el=document) => el.querySelector(s);
   const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+
+  function escapeHtml(str = '') {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
 
   function toast(msg, good=true) {
     const t = $('#toast');
@@ -49,7 +53,7 @@
     }
   }
 
-  // ====== Admins Directory ======
+  // ====== Admins Directory (unchanged) ======
   const adminState = { page:1, perPage:10, q:'' };
 
   function bindAdminControls() {
@@ -108,10 +112,10 @@
         tbody.innerHTML = rows.map(r => `
           <tr>
             <td>${r.id_user}</td>
-            <td>${r.nama}</td>
-            <td>${r.no_hp}</td>
-            <td>${r.alamat || '-'}</td>
-            <td>${r.role}</td>
+            <td>${escapeHtml(r.nama)}</td>
+            <td>${escapeHtml(r.no_hp)}</td>
+            <td>${escapeHtml(r.alamat || '-')}</td>
+            <td>${escapeHtml(r.role)}</td>
             <td class="actions">
               <button class="btn tiny danger" data-reset="${r.id_user}" title="Reset password ke default">Reset PW</button>
             </td>
@@ -134,7 +138,6 @@
           }
         });
       });
-      // clamp page if no more rows
       if (!rows.length && adminState.page>1) {
         adminState.page = Math.max(1, page-1);
       }
@@ -144,7 +147,7 @@
     }
   }
 
-  // ====== Map & Points ======
+  // ====== Map & Points (unchanged) ======
   let map, markersLayer, markers = new Map();
   let pendingMarker = null;
 
@@ -231,7 +234,6 @@
   }
 
   async function loadPoints() {
-    // clear markers
     markersLayer.clearLayers(); markers.clear(); if (pendingMarker) { pendingMarker=null; }
 
     const only = $('#fltActive').checked ? 1 : 0;
@@ -248,10 +250,9 @@
         tbody.innerHTML = `<tr><td colspan="7" class="empty">Tidak ada titik</td></tr>`;
         return;
       }
-      // add markers + table
       rows.forEach(r => {
         const m = L.marker([r.lat, r.lng], { draggable:false })
-          .bindPopup(`<b>${r.name}</b><br>${r.type}<br>${r.address ?? ''}`)
+          .bindPopup(`<b>${escapeHtml(r.name)}</b><br>${escapeHtml(r.type)}<br>${escapeHtml(r.address ?? '')}`)
           .addTo(markersLayer);
         markers.set(r.id, m);
       });
@@ -259,8 +260,8 @@
       tbody.innerHTML = rows.map(r => `
         <tr>
           <td>${r.id}</td>
-          <td>${r.name}</td>
-          <td>${r.type}</td>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.type)}</td>
           <td>${Number(r.lat).toFixed(6)}</td>
           <td>${Number(r.lng).toFixed(6)}</td>
           <td>${r.active ? 'Ya' : 'Tidak'}</td>
@@ -271,13 +272,11 @@
         </tr>
       `).join('');
 
-      // bind edit/delete
       $$('#pointsTable [data-edit]').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = +btn.getAttribute('data-edit');
           const row = rows.find(x => +x.id===id);
           if (!row) return;
-          // fill form
           $('#point_id').value = row.id;
           $('#point_name').value = row.name;
           $('#point_type').value = row.type;
@@ -286,8 +285,6 @@
           $('#point_lat').value = Number(row.lat).toFixed(7);
           $('#point_lng').value = Number(row.lng).toFixed(7);
           $('#point_active').checked = !!row.active;
-
-          // focus map & marker
           map.setView([row.lat,row.lng], 17);
           if (pendingMarker) { markersLayer.removeLayer(pendingMarker); pendingMarker=null; }
           const ex = markers.get(row.id);
@@ -328,6 +325,133 @@
     setActive(location.hash || '#overview');
   }
 
+  // ====== Jenis Sampah (BARU/Perbaikan) ======
+  const sampahTbody = document.querySelector('#sampahTable tbody');
+  const sampahForm = document.getElementById('sampahForm');
+  const sampahId = document.getElementById('sampah_id');
+  const sampahJenis = document.getElementById('sampah_jenis');
+  const sampahHarga = document.getElementById('sampah_harga');
+  const sampahReset = document.getElementById('sampahReset');
+
+  async function loadSampah(){
+    if (!sampahTbody) return;
+    sampahTbody.innerHTML = `<tr><td colspan="4"><div class="skeleton">Memuat…</div></td></tr>`;
+    try {
+      const rows = await jget(`${API}?action=readSampah`);
+      if (!rows.length) {
+        sampahTbody.innerHTML = `<tr><td colspan="4" class="empty">Belum ada data</td></tr>`;
+        return;
+      }
+      sampahTbody.innerHTML = rows.map(r => `
+  <tr>
+    <td>${r.id_jenis}</td>
+    <td>${escapeHtml(r.jenis)}</td>
+    <td>${escapeHtml(r.kategori || '-')}</td>
+    <td>Rp ${Number(r.harga).toLocaleString('id-ID')}</td>
+    <td class="actions">
+      <button class="btn tiny" data-edit="${r.id_jenis}">Edit</button>
+      <button class="btn tiny danger" data-del="${r.id_jenis}">Hapus</button>
+    </td>
+  </tr>
+`).join('');
+
+
+
+      // bind edit buttons
+      $$('#sampahTable [data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-edit');
+          const row = rows.find(r => String(r.id_jenis) === String(id));
+          if (!row) return;
+          sampahId.value = row.id_jenis;
+          sampahJenis.value = row.jenis;
+          sampahHarga.value = row.harga;
+          window.location.hash = '#sampah';
+          toast('Form jenis sampah terisi (edit)');
+        });
+      });
+
+      // bind delete buttons
+      $$('#sampahTable [data-del]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-del');
+          if (!confirm('Yakin hapus jenis sampah ini?')) return;
+          const fd = new FormData();
+          fd.append('id_jenis', id);
+          try {
+            const res = await jpost(`${API}?action=deleteSampah`, fd);
+            if (res.success) { toast('Jenis sampah dihapus'); loadSampah(); }
+            else toast(res.error || 'Gagal hapus jenis sampah', false);
+          } catch (e) {
+            toast('Gagal hapus jenis sampah', false);
+            console.error(e);
+          }
+        });
+      });
+
+    } catch (e) {
+      sampahTbody.innerHTML = `<tr><td colspan="4" class="empty">Gagal memuat data</td></tr>`;
+      console.error(e);
+    }
+  }
+
+  sampahForm?.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const jenis = sampahJenis.value.trim();
+  const harga = parseInt(sampahHarga.value, 10) || 0;
+  const id_kategori = parseInt(sampahKategori.value, 10) || 0;
+
+  if (!jenis || harga <= 0 || id_kategori <= 0) {
+    toast('Jenis, harga & kategori wajib diisi', false);
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('jenis', jenis);
+  fd.append('harga', harga);
+  fd.append('id_kategori', id_kategori);
+  const id = sampahId.value.trim();
+  const action = id ? 'updateSampah' : 'createSampah';
+  if (id) fd.append('id_jenis', id);
+
+  try {
+    const res = await jpost(`${API}?action=${action}`, fd);
+    if (res.success) {
+      toast(id ? 'Jenis sampah diperbarui' : 'Jenis sampah ditambahkan');
+      sampahForm.reset();
+      sampahId.value = '';
+      loadSampah();
+    } else {
+      toast(res.error || 'Gagal menyimpan jenis sampah', false);
+    }
+  } catch (e) {
+    toast('Gagal menyimpan jenis sampah', false);
+    console.error(e);
+  }
+});
+
+
+  sampahReset?.addEventListener('click', () => {
+    sampahForm.reset();
+    sampahId.value = '';
+  });
+
+  const sampahKategori = document.getElementById('sampah_kategori');
+
+// Load kategori ke dropdown
+async function loadKategoriDropdown() {
+  try {
+    const rows = await jget(`${API}?action=readKategori`);
+    sampahKategori.innerHTML = rows.map(r => `
+      <option value="${r.id_kategori}">${escapeHtml(r.kategori)}</option>
+    `).join('');
+  } catch (e) {
+    sampahKategori.innerHTML = `<option value="">[Gagal memuat kategori]</option>`;
+    console.error(e);
+  }
+}
+
+
   // ===== Init =====
   document.addEventListener('DOMContentLoaded', async () => {
     bindNav();
@@ -337,5 +461,7 @@
     await loadStats();
     await loadAdmins();
     await loadPoints();
+    await loadSampah();
+    await loadKategoriDropdown();
   });
 })();

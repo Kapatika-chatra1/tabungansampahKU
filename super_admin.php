@@ -9,20 +9,11 @@ if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'super_admin') {
     exit();
 }
 
-/* (Opsional) Helper lama – disimpan kalau suatu saat dipakai */
-function harga_perkg(string $jenis): int {
-    $map = [
-        "Botol Plastik" => 5000,
-        "Aluminium"     => 7000,
-        "Kayu"          => 2000,
-        "Kertas"        => 3000,
-    ];
-    return $map[$jenis] ?? 0;
-}
-
 /* ===== Util singkat ===== */
 function is_post(){ return $_SERVER['REQUEST_METHOD']==='POST'; }
-function j($data){ header('Content-Type: application/json; charset=utf-8'); echo json_encode($data); exit(); }
+function j($data){ header('Content-Type: application/json; charset=utf-8'); 
+  echo json_encode($data); 
+  exit(); }
 function csv_open($filename){
   header('Content-Type: text/csv; charset=utf-8');
   header("Content-Disposition: attachment; filename=$filename");
@@ -193,278 +184,243 @@ if ($action === 'exportPoints') {
   fclose($out); exit();
 }
 
+
+/* ===== Tambah jenis ===== */
+if ($action === 'createSampah' && is_post()) {
+  $jenis = trim($_POST['jenis'] ?? '');
+  $harga = (int)($_POST['harga'] ?? 0);
+  $id_kategori = (int)($_POST['id_kategori'] ?? 0);
+
+  if ($jenis === '' || $harga <= 0 || $id_kategori <= 0) {
+    j(['success'=>false,'error'=>'Jenis, harga & kategori wajib diisi']);
+  }
+
+  $st = $conn->prepare("INSERT INTO jenis_sampah (jenis, harga, id_kategori) VALUES (?,?,?)");
+  $st->bind_param("sii", $jenis, $harga, $id_kategori);
+
+  if ($st->execute()) {
+    j(['success'=>true]);
+  } else {
+    j(['success'=>false,'error'=>$st->error]);
+  }
+}
+
+if ($action === 'readKategori') {
+  $res = $conn->query("SELECT id_kategori, kategori FROM kategori ORDER BY kategori ASC");
+  j($res->fetch_all(MYSQLI_ASSOC));
+}
+
+/* ===== Baca semua jenis ===== */
+if ($action === 'readSampah') {
+  $rows = [];
+  $rs = $conn->query("
+    SELECT js.id_jenis, js.jenis, js.id_kategori, k.kategori, js.harga
+    FROM jenis_sampah js
+    LEFT JOIN kategori k ON js.id_kategori = k.id_kategori
+    ORDER BY js.id_jenis Asc
+  ");
+  while ($r = $rs->fetch_assoc()) $rows[] = $r;
+  j($rows);
+}
+
+
+
+/* ===== Update jenis ===== */
+if ($action === 'updateSampah' && is_post()) {
+  $id = (int)($_POST['id_jenis'] ?? 0);
+  $jenis = trim($_POST['jenis'] ?? '');
+  $harga = (int)($_POST['harga'] ?? 0);
+  $id_kategori = (int)($_POST['id_kategori'] ?? 0);
+
+  if ($id<=0 || $jenis==='' || $harga<=0 || $id_kategori<=0) {
+    j(['success'=>false,'error'=>'Data tidak valid']);
+  }
+
+  $st = $conn->prepare("UPDATE jenis_sampah SET jenis=?, harga=?, id_kategori=? WHERE id_jenis=?");
+  $st->bind_param("siii", $jenis, $harga, $id_kategori, $id);
+  j(['success'=>$st->execute(), 'error'=>$st->error]);
+}
+
+
+/* Hapus jenis */
+if ($action === 'deleteSampah' && is_post()) {
+  $id_jenis = (int)($_POST['id_jenis'] ?? $_POST['id'] ?? 0);
+  if ($id_jenis<=0) j(['success'=>false,'error'=>'ID tidak valid']);
+  $st = $conn->prepare("DELETE FROM jenis_sampah WHERE id_jenis=?");
+  $st->bind_param("i",$id_jenis);
+  j(['success'=>$st->execute()]);
+}
+
+
+
 /* ====== Tidak ada action: render halaman (HTML) ====== */
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Dashboard Super Admin - Bank Sampah Karangsewu</title>
-
-  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="super_admin.css?v=3"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <!-- Theme -->
-  <link rel="stylesheet" href="super_admin.css?v=3"/>
-
   <meta name="theme-color" content="#2e7d32"/>
-  <meta name="description" content="Panel Super Admin untuk mengelola admin dan titik lokasi Bank Sampah Karangsewu."/>
 </head>
 <body>
-  <!-- Sidebar -->
   <aside class="sa-side" role="navigation" aria-label="Sidebar utama">
-    <div class="side-brand" aria-label="Brand">🌱 Karangsewu</div>
-
+    <div class="side-brand">🌱 Karangsewu</div>
     <nav class="side-nav" aria-label="Menu">
       <a href="#overview" class="active" data-panel="overview" aria-current="page">Ikhtisar</a>
       <a href="#admins" data-panel="admins">Admin</a>
       <a href="#map" data-panel="map">Peta</a>
+      <a href="#sampah" data-panel="sampah">Jenis Sampah</a>
       <a href="#export" data-panel="export">Ekspor</a>
     </nav>
-
     <div class="side-foot">
-      <div class="who">
-        <?= htmlspecialchars($_SESSION['nama']); ?> <span>Super Admin</span>
-      </div>
-      <a href="logout.php" class="btn-logout" title="Keluar dari sesi">Keluar</a>
+      <div class="who"><?= htmlspecialchars($_SESSION['nama']); ?> <span>Super Admin</span></div>
+      <a href="logout.php" class="btn-logout">Keluar</a>
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main class="sa-main" role="main">
-    <!-- ================= OVERVIEW ================= -->
-    <section id="overview" class="section" aria-labelledby="ov-title" data-panel="overview">
+    <!-- Overview -->
+    <section id="overview" class="section" data-panel="overview">
       <header class="section-head">
-        <h1 id="ov-title">Ikhtisar</h1>
-        <p class="muted">Statistik ringkas sistem untuk membantu pengambilan keputusan cepat.</p>
+        <h1>Ikhtisar</h1>
+        <p class="muted">Statistik ringkas sistem.</p>
       </header>
-
-      <div class="stats-grid" role="region" aria-label="Statistik ringkas">
-        <article class="stat elevated" aria-live="polite" aria-label="Total admin">
-          <div class="num" id="totalAdmins">0</div>
-          <div class="label">Total Admin</div>
-        </article>
-
-        <article class="stat elevated" aria-live="polite" aria-label="Titik aktif">
-          <div class="num" id="totalPoints">0</div>
-          <div class="label">Titik Aktif</div>
-        </article>
-
-        <article class="stat elevated" aria-label="Distribusi role">
+      <div class="stats-grid">
+        <article class="stat elevated"><div class="num" id="totalAdmins">0</div><div class="label">Total Admin</div></article>
+        <article class="stat elevated"><div class="num" id="totalPoints">0</div><div class="label">Titik Aktif</div></article>
+        <article class="stat elevated">
           <div class="sub">Distribusi Role</div>
-          <ul class="roles" id="roleDist">
-            <li><b>Admin</b> <span id="rc_admin">0</span></li>
-            <li><b>User</b> <span id="rc_user">0</span></li>
-            <li><b>Super Admin</b> <span id="rc_sa">0</span></li>
-          </ul>
+          <ul class="roles"><li><b>Admin</b> <span id="rc_admin">0</span></li><li><b>User</b> <span id="rc_user">0</span></li><li><b>Super Admin</b> <span id="rc_sa">0</span></li></ul>
         </article>
       </div>
     </section>
 
-    <!-- ================= ADMINS ================= -->
-    <section id="admins" class="section" aria-labelledby="ad-title" data-panel="admins">
-      <header class="section-head">
-        <h2 id="ad-title">Direktori Admin</h2>
-        <p class="muted">Kelola daftar admin: pencarian, paging, tambah admin baru, dan reset password default.</p>
-      </header>
-
+    <!-- Admins -->
+    <section id="admins" class="section" data-panel="admins">
+      <header class="section-head"><h2>Direktori Admin</h2><p class="muted">Kelola admin.</p></header>
       <div class="sa-card">
         <div class="sa-card__head card-row">
-          <div class="inline" role="group" aria-label="Kontrol pencarian admin">
-            <input id="adminSearch" type="text" placeholder="Cari nama / HP / alamat…" aria-label="Cari admin"/>
-            <select id="adminPerPage" aria-label="Jumlah per halaman">
-              <option value="10">10 / halaman</option>
-              <option value="20">20 / halaman</option>
-              <option value="50">50 / halaman</option>
-            </select>
-            <button id="reloadAdmins" class="btn info" type="button" aria-label="Muat ulang daftar admin">Muat Ulang</button>
+          <div class="inline">
+            <input id="adminSearch" type="text" placeholder="Cari nama / HP / alamat…"/>
+            <select id="adminPerPage"><option value="10">10 / halaman</option><option value="20">20 / halaman</option><option value="50">50 / halaman</option></select>
+            <button id="reloadAdmins" class="btn info">Muat Ulang</button>
           </div>
           <div class="inline">
-            <button id="exportAdmins" class="btn ghost" type="button" aria-label="Ekspor admin ke CSV">Ekspor CSV</button>
+            <button id="exportAdmins" class="btn ghost">Ekspor CSV</button>
           </div>
         </div>
 
         <div class="grid-2">
-          <!-- TABEL ADMIN -->
-          <div class="table-wrap" role="region" aria-label="Tabel admin">
-            <table class="sa-table" id="adminsTable" aria-describedby="ad-table-desc">
-              <caption id="ad-table-desc" class="visually-hidden">Daftar admin dengan aksi reset password</caption>
-              <thead>
-                <tr>
-                  <th scope="col">ID</th>
-                  <th scope="col">Nama</th>
-                  <th scope="col">No HP</th>
-                  <th scope="col">Alamat</th>
-                  <th scope="col">Role</th>
-                  <th scope="col">Aksi</th>
-                </tr>
-              </thead>
-              <tbody><!-- diisi lewat JS --></tbody>
-            </table>
-
-            <div class="pager" role="navigation" aria-label="Pagination">
-              <button class="btn tiny" id="prevPage" type="button" aria-label="Halaman sebelumnya">⟵</button>
-              <span id="pageInfo" aria-live="polite">Hal. 1</span>
-              <button class="btn tiny" id="nextPage" type="button" aria-label="Halaman berikutnya">⟶</button>
-            </div>
+          <div class="table-wrap">
+            <table id="adminsTable" class="sa-table"><thead><tr><th>ID</th><th>Nama</th><th>No HP</th><th>Alamat</th><th>Role</th><th>Aksi</th></tr></thead><tbody></tbody></table>
+            <div class="pager"><button class="btn tiny" id="prevPage">⟵</button><span id="pageInfo">Hal. 1</span><button class="btn tiny" id="nextPage">⟶</button></div>
           </div>
-
-          <!-- FORM TAMBAH ADMIN -->
-          <form id="addAdminForm" class="inline-form" autocomplete="off" aria-label="Form tambah admin baru">
+          <form id="addAdminForm" class="inline-form" autocomplete="off">
             <h3>Tambah Admin Baru</h3>
-
-            <label for="ad_nama">Nama
-              <input type="text" id="ad_nama" required placeholder="Nama lengkap"/>
-            </label>
-
-            <label for="adding_hp">No HP
-              <input type="text" id="adding_hp" required placeholder="08xxxxxxxxxx" inputmode="numeric"/>
-            </label>
-
-            <label for="ad_alamat">Alamat
-              <input type="text" id="ad_alamat" placeholder="Opsional"/>
-            </label>
-
-            <div class="hint">Password default: <code>Karangsewu777</code> (dapat diubah oleh desa melalui prosedur internal)</div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn success" aria-label="Tambah admin">Tambah</button>
-              <button type="reset" class="btn ghost" aria-label="Reset form">Reset</button>
-            </div>
+            <label>Nama <input id="ad_nama" type="text" required/></label>
+            <label>No HP <input id="adding_hp" type="text" required inputmode="numeric"/></label>
+            <label>Alamat <input id="ad_alamat" type="text"/></label>
+            <div class="hint">Password default: <code>Karangsewu777</code></div>
+            <div class="form-actions"><button type="submit" class="btn success">Tambah</button><button type="reset" class="btn ghost">Reset</button></div>
           </form>
         </div>
       </div>
     </section>
 
-    <!-- ================= MAP ================= -->
-    <section id="map" class="section" aria-labelledby="map-title" data-panel="map">
-      <header class="section-head">
-        <h2 id="map-title">Kelola Peta Titik</h2>
-        <p class="muted">Klik peta untuk membuat titik. Seret marker untuk mengubah posisi. Simpan untuk merekam ke database.</p>
-      </header>
-
+    <!-- Map -->
+    <section id="map" class="section" data-panel="map">
+      <header class="section-head"><h2>Kelola Peta Titik</h2><p class="muted">Klik peta untuk membuat titik.</p></header>
       <div class="sa-card">
         <div class="sa-card__head card-row">
-          <div class="inline" role="group" aria-label="Filter titik peta">
-            <select id="fltType" aria-label="Filter jenis">
-              <option value="">Semua Jenis</option>
-              <option>Pengepul</option>
-              <option>TPS</option>
-              <option>Bank Sampah</option>
-              <option>Lainnya</option>
-            </select>
-
-            <label class="chk" for="fltActive">
-              <input type="checkbox" id="fltActive" checked/> Hanya Aktif
-            </label>
-
-            <input id="fltQ" type="text" placeholder="Cari nama / HP / alamat…" aria-label="Kata kunci filter"/>
-
-            <button id="applyFilter" class="btn" type="button" aria-label="Terapkan filter">Terapkan</button>
+          <div class="inline">
+            <select id="fltType"><option value="">Semua Jenis</option><option>Pengepul</option><option>TPS</option><option>Bank Sampah</option><option>Lainnya</option></select>
+            <label class="chk"><input type="checkbox" id="fltActive" checked/> Hanya Aktif</label>
+            <input id="fltQ" type="text" placeholder="Cari…"/>
+            <button id="applyFilter" class="btn">Terapkan</button>
           </div>
-
-          <div class="inline" role="group" aria-label="Aksi peta">
-            <button id="fitAll" class="btn ghost" type="button">Fit to Markers</button>
-            <button id="locateMe" class="btn ghost" type="button">Lokasi Saya</button>
-            <button id="exportPoints" class="btn ghost" type="button">Ekspor Titik CSV</button>
+          <div class="inline">
+            <button id="fitAll" class="btn ghost">Fit to Markers</button>
+            <button id="locateMe" class="btn ghost">Lokasi Saya</button>
+            <button id="exportPoints" class="btn ghost">Ekspor Titik CSV</button>
           </div>
         </div>
 
         <div class="grid-2">
-          <!-- MAP -->
-          <div class="map" id="adminMap" role="application" aria-label="Peta titik lokasi"></div>
+          <div id="adminMap" class="map" role="application" aria-label="Peta titik lokasi"></div>
 
-          <!-- FORM TITIK -->
-          <form id="pointForm" class="point-form" autocomplete="off" aria-label="Form titik peta">
+          <form id="pointForm" class="point-form" autocomplete="off">
             <input type="hidden" id="point_id"/>
-
-            <label for="point_name">Nama Titik
-              <input id="point_name" type="text" required placeholder="Contoh: Pengepul Pak Budi"/>
-            </label>
-
-            <label for="point_type">Jenis
-              <select id="point_type">
-                <option>Pengepul</option>
-                <option>TPS</option>
-                <option>Bank Sampah</option>
-                <option>Lainnya</option>
-              </select>
-            </label>
-
-            <label for="point_phone">No HP (opsional)
-              <input id="point_phone" type="text" placeholder="08xxxxxxxxxx"/>
-            </label>
-
-            <label for="point_address">Alamat (opsional)
-              <input id="point_address" type="text" placeholder="Dusun/RT/RW, patokan lokasi…"/>
-            </label>
-
-            <div class="grid-2 tight">
-              <label for="point_lat">Lat
-                <input id="point_lat" type="number" step="0.0000001" required placeholder="-7.xxxxxx"/>
-              </label>
-              <label for="point_lng">Lng
-                <input id="point_lng" type="number" step="0.0000001" required placeholder="110.xxxxxx"/>
-              </label>
-            </div>
-
-            <label class="switch" for="point_active">
-              <input id="point_active" type="checkbox" checked/>
-              <span>Aktif</span>
-            </label>
-
-            <div class="form-actions">
-              <button type="button" id="savePoint" class="btn success" aria-label="Simpan titik">Simpan</button>
-              <button type="button" id="resetPoint" class="btn ghost" aria-label="Reset form titik">Reset</button>
-            </div>
+            <label>Nama Titik <input id="point_name" type="text" required/></label>
+            <label>Jenis <select id="point_type"><option>Pengepul</option><option>TPS</option><option>Bank Sampah</option><option>Lainnya</option></select></label>
+            <label>No HP <input id="point_phone" type="text"/></label>
+            <label>Alamat <input id="point_address" type="text"/></label>
+            <div class="grid-2 tight"><label>Lat <input id="point_lat" type="number" step="0.0000001" required/></label><label>Lng <input id="point_lng" type="number" step="0.0000001" required/></label></div>
+            <label class="switch"><input id="point_active" type="checkbox" checked/><span>Aktif</span></label>
+            <div class="form-actions"><button type="button" id="savePoint" class="btn success">Simpan</button><button type="button" id="resetPoint" class="btn ghost">Reset</button></div>
           </form>
         </div>
 
-        <!-- TABEL TITIK -->
-        <div class="table-wrap mt16" role="region" aria-label="Daftar titik">
-          <table class="sa-table" id="pointsTable">
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Nama</th>
-                <th scope="col">Jenis</th>
-                <th scope="col">Lat</th>
-                <th scope="col">Lng</th>
-                <th scope="col">Aktif</th>
-                <th scope="col">Aksi</th>
-              </tr>
-            </thead>
-            <tbody><!-- diisi lewat JS --></tbody>
-          </table>
+        <div class="table-wrap mt16">
+          <table id="pointsTable" class="sa-table"><thead><tr><th>ID</th><th>Nama</th><th>Jenis</th><th>Lat</th><th>Lng</th><th>Aktif</th><th>Aksi</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
     </section>
 
-    <!-- ================= EXPORT ================= -->
-    <section id="export" class="section" aria-labelledby="ex-title" data-panel="export">
-      <header class="section-head">
-        <h2 id="ex-title">Ekspor</h2>
-        <p class="muted">Unduh data admin & titik untuk arsip atau laporan desa.</p>
-      </header>
-
+    <!-- Jenis Sampah -->
+    <section id="sampah" class="section" data-panel="sampah">
+      <header class="section-head"><h2>Daftar Jenis Sampah</h2><p class="muted">Kelola daftar jenis sampah (CRUD).</p></header>
       <div class="sa-card">
-        <div class="inline">
-          <a class="btn info"  href="super_admin.php?action=exportAdmins"  aria-label="Unduh admin CSV">Unduh Admin CSV</a>
-          <a class="btn info"  href="super_admin.php?action=exportPoints"  aria-label="Unduh titik CSV">Unduh Titik CSV</a>
+        <div class="grid-2">
+          <div class="table-wrap">
+            <table id="sampahTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Jenis</th>
+      <th>Kategori</th>
+      <th>Harga</th>
+      <th>Aksi</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+          </div>
+
+          <form id="sampahForm">
+  <input type="hidden" id="sampah_id" name="sampah_id">
+  
+  <label for="sampah_jenis">Jenis Sampah</label>
+  <input type="text" id="sampah_jenis" name="jenis" required>
+
+  <label for="sampah_harga">Harga</label>
+  <input type="number" id="sampah_harga" name="harga" required>
+
+  <label for="sampah_kategori">Kategori</label>
+  <select id="sampah_kategori" name="id_kategori" required></select>
+
+  <button type="submit" class="btn">Simpan</button>
+  <button type="reset" class="btn" id="sampahReset">Reset</button>
+</form>
+
         </div>
-        <p class="mt-3 text-muted">Catatan: berkas CSV menggunakan urutan kolom yang konsisten agar mudah diolah di Excel/Spreadsheet.</p>
       </div>
     </section>
 
-    <footer class="sa-footer" role="contentinfo">© 2025 Bank Sampah Karangsewu</footer>
+
+    <footer class="sa-footer">
+
+    <p>© 2025 Bank Sampah Karangsewu</p>
+    <a href="https://github.com/Kapatika-chatra1/tabungansampahKU/activity">By : Informatika KKN UII Angkatan 71 2025</a>
+    </footer>
   </main>
 
-  <!-- Toast -->
   <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Scripts -->
-  <script src="super_admin.js?v=3" defer></script>
+  <script src="super_admin.js?v=5" defer></script>
 </body>
 </html>

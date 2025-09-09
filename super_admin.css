@@ -266,8 +266,38 @@ body{
 }
 .table-wrap::-webkit-scrollbar-track, body::-webkit-scrollbar-track{ background:transparent }
 
+#sampahForm{
+  background:var(--glass); border:1px solid var(--line); border-radius:var(--rad); padding:14px;
+  display:flex; flex-direction:column; gap:10px;
+}
+#sampahForm h3{ margin:0 0 4px }
+#sampahForm label{ display:flex; flex-direction:column; gap:6px; font-weight:700; font-size:13px }
+#sampahForm input{
+  padding:10px 12px; border:1px solid #dfe9e2; border-radius:10px; background:#fff; color:var(--ink);
+  transition:border-color var(--t-fast), box-shadow var(--t-fast);
+}
+#sampahForm input:focus{
+  outline:none; border-color:#bfe4c2; box-shadow:0 0 0 4px rgba(46,125,50,.12);
+}
+
 /* Footer */
-.sa-footer{ text-align:center; color:var(--muted); padding:18px 8px }
+.sa-footer{ 
+  text-align:center; 
+  color:var(--muted); 
+  padding:18px 8px; 
+}
+.sa-footer a{
+  color: grey;
+  text-decoration: none;
+}
+.sa-footer a:hover{
+  color: #F0FFFF;
+  text-decoration: none;
+  background-color: grey;
+  padding: 10px;
+  border-radius: 10px;
+}
+
 
 /* Responsive */
 @media (max-width:1100px){
