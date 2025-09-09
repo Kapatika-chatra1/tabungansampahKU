@@ -30,7 +30,7 @@
 }
 
 /* Dark mode (auto) */
-@media (prefers-color-scheme: dark){
+/*@media (prefers-color-scheme: dark){
   :root{
     --bg:#0b100d; --bg2:#0e150f; --card:#111a12; --glass:#111a12cc;
     --ink:#e8f5e9; --ink-2:#cde8d1; --muted:#a3b2a7;
