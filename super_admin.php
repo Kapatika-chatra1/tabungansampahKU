@@ -319,8 +319,8 @@ if ($action === 'exportPoints') {
               <input type="text" id="ad_nama" required placeholder="Nama lengkap"/>
             </label>
 
-            <label for="ad_hp">No HP
-              <input type="text" id="ad_hp" required placeholder="08xxxxxxxxxx" inputmode="numeric"/>
+            <label for="adding_hp">No HP
+              <input type="text" id="adding_hp" required placeholder="08xxxxxxxxxx" inputmode="numeric"/>
             </label>
 
             <label for="ad_alamat">Alamat

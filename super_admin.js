@@ -79,7 +79,7 @@
       e.preventDefault();
       const fd = new FormData();
       fd.append('nama', $('#ad_nama').value.trim());
-      fd.append('no_hp', $('#ad_hp').value.trim());
+      fd.append('no_hp', $('#adding_hp').value.trim());
       fd.append('alamat', $('#ad_alamat').value.trim());
       try {
         const res = await jpost(`${API}?action=createAdmin`, fd);
