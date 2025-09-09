@@ -177,6 +177,30 @@ INSERT INTO `transaction` (`id_trans`, `id_user`, `no_hp`, `id_jenis`, `tanggal`
 (4, 7, '089458923126', 13, '2025-09-04 05:12:12.443082', 12),
 (5, 8, '081312341234', 13, '2025-09-04 06:48:06.000000', 20);
 
+-- =========================
+-- TABEL BARU: location_points
+-- =========================
+CREATE TABLE IF NOT EXISTS `location_points` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `type` ENUM('Pengepul','TPS','Bank Sampah','Lainnya') NOT NULL DEFAULT 'Pengepul',
+  `phone` VARCHAR(20) DEFAULT NULL,
+  `address` VARCHAR(255) DEFAULT NULL,
+  `lat` DECIMAL(10,7) NOT NULL,
+  `lng` DECIMAL(10,7) NOT NULL,
+  `active` TINYINT(1) NOT NULL DEFAULT 1,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_active_type` (`active`,`type`),
+  KEY `idx_lat_lng` (`lat`,`lng`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- (Opsional) Contoh data awal
+INSERT INTO `location_points` (`name`,`type`,`phone`,`address`,`lat`,`lng`,`active`) VALUES
+('Pengepul Pak Budi', 'Pengepul', '081234567890', 'Dusun A RT 01', -7.8712300, 110.1123400, 1),
+('TPS Timur Balai Desa', 'TPS', NULL, 'Dekat Balai Desa', -7.8721000, 110.1159000, 1);
+
+
 --
 -- Indexes for dumped tables
 --
