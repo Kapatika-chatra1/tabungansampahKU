@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 09, 2025 at 04:42 PM
+-- Generation Time: Sep 09, 2025 at 07:47 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -50,7 +50,8 @@ INSERT INTO `account` (`id_user`, `nama`, `password`, `no_hp`, `alamat`, `role`)
 (7, 'Putri Kudus', '$2y$10$fFE2QKaW2E73p.yhxBIWF.svluNdtkLVUtZIkbMW4o1Ct.wIUdIH2', '089458923126', '', 'user'),
 (8, 'Sorogaten II', '$2y$10$ntRl2Vnx4eg3A/i6eLHBR.dclow5x3E4KcuI/uMGpAGLDwsq7H4/C', '081312341234', 'Padukuhan Sorogaten II', 'user'),
 (9, 'Kalurahan', '$2y$10$7.v8xPBsCpNPwJPsFvZjwui3cNA/KQw1mqQJ2Z6LPIJZJxC8LWFZG', '082312341234', 'Kalurahan Karangsewu', 'super_admin'),
-(10, 'Wisnu Setiawan', '$2y$10$YtrTVmJ../QN6vKlC5vog.p4HQmA1dilnfT3Gu1EbwyfZY7YM9Dwe', '085612341234', 'Dalen', 'admin');
+(10, 'Wisnu Setiawan', '$2y$10$YtrTVmJ../QN6vKlC5vog.p4HQmA1dilnfT3Gu1EbwyfZY7YM9Dwe', '085612341234', 'Dalen', 'admin'),
+(11, 'Akbar Gunadarma', '$2y$10$/wQTjyeu6mifwzfHldoCW.JL.ejpqeSB8rf0pj0HRVaYJpFGmUt7G', '089912341234', 'Mabeyan', 'admin');
 
 -- --------------------------------------------------------
 
@@ -83,7 +84,7 @@ CREATE TABLE `jenis_sampah` (
 --
 
 INSERT INTO `jenis_sampah` (`id_jenis`, `id_kategori`, `jenis`, `harga`) VALUES
-(1, 1, 'Botol PET', 5000),
+(1, 1, 'Botol PET', 5500),
 (2, 1, 'HDPE (Jerigen, Botol', 6000),
 (3, 1, 'PP (gelas plastik, s', 4500),
 (4, 1, 'Kresek', 1000),
@@ -106,7 +107,7 @@ INSERT INTO `jenis_sampah` (`id_jenis`, `id_kategori`, `jenis`, `harga`) VALUES
 (21, 5, 'Laptop Rusak', 6500),
 (22, 5, 'Ban Bekas', 3500),
 (23, 5, 'Tekstil (Baju Bekas)', 5500),
-(24, 5, 'Hp Bekas', 9000);
+(30, 2, 'Bungkus Rokok', 1000);
 
 -- --------------------------------------------------------
 
@@ -156,7 +157,8 @@ CREATE TABLE `location_points` (
 INSERT INTO `location_points` (`id`, `name`, `type`, `phone`, `address`, `lat`, `lng`, `active`, `updated_at`) VALUES
 (2, 'TPS Timur Balai Desa', 'TPS', NULL, 'Dekat Balai Desa', -7.8721000, 110.1159000, 1, '2025-09-09 14:06:19'),
 (3, 'Pengepul Pak Heru', 'Pengepul', '085566667777', 'Dalen', -7.9432049, 110.2131439, 0, '2025-09-09 14:11:04'),
-(4, 'Pengepul Pak Heru', 'Pengepul', '0855666777', 'Padukuhan Dalen', -7.9431688, 110.2131380, 1, '2025-09-09 14:13:04');
+(4, 'Pengepul Pak Heru', 'Pengepul', '0855666777', 'Padukuhan Dalen', -7.9431688, 110.2131380, 1, '2025-09-09 14:13:04'),
+(5, 'Pengepul Mabeyan', 'Pengepul', '089912341234', 'Mabeyan Rt 57 Rw 23', -7.9499183, 110.1966591, 1, '2025-09-09 15:47:22');
 
 -- --------------------------------------------------------
 
@@ -272,7 +274,7 @@ ALTER TABLE `transaction`
 -- AUTO_INCREMENT for table `account`
 --
 ALTER TABLE `account`
-  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `history`
@@ -284,7 +286,7 @@ ALTER TABLE `history`
 -- AUTO_INCREMENT for table `jenis_sampah`
 --
 ALTER TABLE `jenis_sampah`
-  MODIFY `id_jenis` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id_jenis` int(10) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `kategori`
@@ -296,7 +298,7 @@ ALTER TABLE `kategori`
 -- AUTO_INCREMENT for table `location_points`
 --
 ALTER TABLE `location_points`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `saldo`
