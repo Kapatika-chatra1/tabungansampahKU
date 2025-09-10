@@ -2,447 +2,310 @@
 session_start();
 require 'koneksi.php';
 
-// pastikan hanya admin
-if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'admin') {
-    http_response_code(403);
-    echo json_encode(["error" => "Unauthorized"]);
+/* ==== Guard: hanya user yang login ==== */
+if (!isset($_SESSION['id_user']) || $_SESSION['role'] !== 'user') {
+    header("Location: login.php");
     exit();
 }
 
+$id_user = (int)$_SESSION['id_user'];
+
+/* ==== API ==== */
 if (isset($_GET['action'])) {
     header('Content-Type: application/json; charset=utf-8');
     $action = $_GET['action'];
 
-    // ================= CREATE TRANSAKSI =================
-    if ($action === 'create') {
-        $nama    = trim($_POST['nama'] ?? '');
-        $id_jenis= (int) ($_POST['id_jenis'] ?? 0);
-        $jumlah  = (int) ($_POST['jumlah'] ?? 0);
-
-        if ($nama === '' || $id_jenis <= 0 || $jumlah <= 0) {
-            echo json_encode(["error" => "Data transaksi tidak lengkap atau jumlah tidak valid."]);
-            exit();
+    // ---- 1) Stats: saldo, total transaksi, jenis terbanyak
+    if ($action === 'stats') {
+        // saldo
+        $saldo = 0;
+        if ($st = $conn->prepare("SELECT saldo FROM saldo WHERE id_user=? LIMIT 1")) {
+            $st->bind_param("i", $id_user);
+            $st->execute();
+            $st->bind_result($s);
+            if ($st->fetch()) $saldo = (int)$s;
+            $st->close();
         }
-
-        // ambil user
-        $q = $conn->prepare("SELECT id_user, no_hp, nama FROM account WHERE nama=? LIMIT 1");
-        $q->bind_param("s", $nama);
-        $q->execute();
-        $res = $q->get_result();
-        if ($res->num_rows === 0) {
-            echo json_encode(["error" => "User tidak ditemukan"]);
-            exit();
+        // total transaksi
+        $total = 0;
+        if ($st = $conn->prepare("SELECT COUNT(*) FROM `transaction` WHERE id_user=?")) {
+            $st->bind_param("i", $id_user);
+            $st->execute();
+            $st->bind_result($t);
+            if ($st->fetch()) $total = (int)$t;
+            $st->close();
         }
-        $userRow = $res->fetch_assoc();
-        $id_user = (int)$userRow['id_user'];
-        $no_hp   = $userRow['no_hp'];
-        $user_nama = $userRow['nama'];
-
-        // ambil harga sampah
-        $qh = $conn->prepare("SELECT harga FROM jenis_sampah WHERE id_jenis=? LIMIT 1");
-        $qh->bind_param("i", $id_jenis);
-        $qh->execute();
-        $resH = $qh->get_result();
-        if ($resH->num_rows === 0) {
-            echo json_encode(["error" => "Jenis sampah tidak valid"]);
-            exit();
+        // jenis terbanyak
+        $top = null;
+        $sqlTop = "
+          SELECT js.jenis, COUNT(*) c
+          FROM `transaction` t
+          JOIN jenis_sampah js ON js.id_jenis=t.id_jenis
+          WHERE t.id_user=?
+          GROUP BY js.jenis
+          ORDER BY c DESC
+          LIMIT 1";
+        if ($st = $conn->prepare($sqlTop)) {
+            $st->bind_param("i", $id_user);
+            $st->execute();
+            $r = $st->get_result()->fetch_assoc();
+            if ($r) $top = $r['jenis'];
+            $st->close();
         }
-        $harga = (int)$resH->fetch_assoc()['harga'];
-        $nominal = $jumlah * $harga;
-
-        $conn->begin_transaction();
-        try {
-            $insT = $conn->prepare("INSERT INTO `transaction` (id_user, no_hp, id_jenis, jumlah_setoran, tanggal) VALUES (?, ?, ?, ?, NOW())");
-            $insT->bind_param("isii", $id_user, $no_hp, $id_jenis, $jumlah);
-            $insT->execute();
-
-            $cekS = $conn->prepare("SELECT id_saldo, saldo FROM saldo WHERE id_user=?");
-            $cekS->bind_param("i", $id_user);
-            $cekS->execute();
-            $resS = $cekS->get_result();
-
-            if ($resS->num_rows > 0) {
-                $rowS = $resS->fetch_assoc();
-                $newSaldo = (int)$rowS['saldo'] + $nominal;
-                $updS = $conn->prepare("UPDATE saldo SET saldo=? WHERE id_saldo=?");
-                $updS->bind_param("ii", $newSaldo, $rowS['id_saldo']);
-                $updS->execute();
-            } else {
-                $insS = $conn->prepare("INSERT INTO saldo (id_user, nama, saldo) VALUES (?, ?, ?)");
-                $insS->bind_param("isi", $id_user, $user_nama, $nominal);
-                $insS->execute();
-            }
-
-            $conn->commit();
-            echo json_encode(["success" => true]);
-        } catch (Throwable $e) {
-            $conn->rollback();
-            echo json_encode(["error" => "Gagal menyimpan transaksi: " . $e->getMessage()]);
-        }
+        echo json_encode([
+            'nama' => $_SESSION['nama'] ?? 'User',
+            'saldo' => $saldo,
+            'total' => $total,
+            'top'   => $top ?: '—'
+        ]);
         exit();
     }
 
-    // ================= READ TRANSAKSI =================
-    elseif ($action === 'read') {
-        $sql = "SELECT 
-                    t.id_trans, 
-                    a.nama, 
-                    j.jenis AS jenis_sampah, 
-                    j.harga, 
-                    t.jumlah_setoran, 
-                    (t.jumlah_setoran * j.harga) AS nominal,
-                    t.tanggal
-                FROM `transaction` t
-                JOIN account a ON t.id_user = a.id_user
-                JOIN jenis_sampah j ON t.id_jenis = j.id_jenis
-                WHERE t.tanggal >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
-                ORDER BY t.id_trans ASC";
-        $res = $conn->query($sql);
-        $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-        echo json_encode($data);
-        exit();
+    // ---- 2) List jenis untuk filter dropdown
+    if ($action === 'jenisList') {
+        $rows = [];
+        $res = $conn->query("SELECT id_jenis, jenis FROM jenis_sampah ORDER BY jenis ASC");
+        if ($res) $rows = $res->fetch_all(MYSQLI_ASSOC);
+        echo json_encode($rows); exit();
     }
 
-    // ================= UPDATE TRANSAKSI =================
-    elseif ($action === 'update') {
-        $id        = (int) ($_POST['id'] ?? 0);
-        $id_jenis  = (int) ($_POST['id_jenis'] ?? 0);
-        $jumlah    = (int) ($_POST['jumlah'] ?? 0);
+    // ---- 3) Riwayat transaksi user (filter & search)
+    if ($action === 'transactions') {
+        $q = trim($_GET['q'] ?? '');
+        $id_jenis = (int)($_GET['id_jenis'] ?? 0);
 
-        if ($id <= 0 || $id_jenis <= 0 || $jumlah <= 0) {
-            echo json_encode(["error" => "Data update tidak lengkap atau tidak valid."]);
-            exit();
+        $sql = "
+          SELECT t.id_trans, a.nama, js.jenis, t.jumlah_setoran, t.tanggal
+          FROM `transaction` t
+          JOIN account a ON a.id_user=t.id_user
+          JOIN jenis_sampah js ON js.id_jenis=t.id_jenis
+          WHERE t.id_user=?
+        ";
+
+        $types = "i"; $params = [$id_user];
+
+        if ($id_jenis > 0) {
+            $sql .= " AND t.id_jenis=? ";
+            $types .= "i"; $params[] = $id_jenis;
         }
-
-        $getOld = $conn->prepare("SELECT id_user, id_jenis, jumlah_setoran FROM `transaction` WHERE id_trans=?");
-        $getOld->bind_param("i", $id);
-        $getOld->execute();
-        $oldRes = $getOld->get_result();
-        if ($oldRes->num_rows === 0) {
-            echo json_encode(["error" => "Transaksi tidak ditemukan"]);
-            exit();
+        if ($q !== '') {
+            $like = "%{$q}%";
+            $sql .= " AND (js.jenis LIKE ? OR a.nama LIKE ? OR CAST(t.id_trans AS CHAR) LIKE ?)";
+            $types .= "sss"; array_push($params, $like, $like, $like);
         }
-        $old = $oldRes->fetch_assoc();
-        $id_user = (int)$old['id_user'];
-        $id_jenis_lama = (int)$old['id_jenis'];
-        $jumlah_lama = (int)$old['jumlah_setoran'];
+        $sql .= " ORDER BY t.id_trans DESC";
 
-        $hL = $conn->query("SELECT harga FROM jenis_sampah WHERE id_jenis=$id_jenis_lama")->fetch_assoc()['harga'] ?? 0;
-        $nominal_lama = $jumlah_lama * $hL;
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-        $hB = $conn->query("SELECT harga FROM jenis_sampah WHERE id_jenis=$id_jenis")->fetch_assoc()['harga'] ?? 0;
-        if ($hB <= 0) {
-            echo json_encode(["error" => "Jenis sampah baru tidak valid"]);
-            exit();
-        }
-        $nominal_baru = $jumlah * $hB;
-        $delta = $nominal_baru - $nominal_lama;
-
-        $conn->begin_transaction();
-        try {
-            $updT = $conn->prepare("UPDATE `transaction` SET id_jenis=?, jumlah_setoran=? WHERE id_trans=?");
-            $updT->bind_param("iii", $id_jenis, $jumlah, $id);
-            $updT->execute();
-
-            $cekS = $conn->prepare("SELECT id_saldo, saldo FROM saldo WHERE id_user=?");
-            $cekS->bind_param("i", $id_user);
-            $cekS->execute();
-            $resS = $cekS->get_result();
-            if ($resS->num_rows > 0) {
-                $rowS = $resS->fetch_assoc();
-                $newSaldo = max(0, (int)$rowS['saldo'] + $delta);
-                $updS = $conn->prepare("UPDATE saldo SET saldo=? WHERE id_saldo=?");
-                $updS->bind_param("ii", $newSaldo, $rowS['id_saldo']);
-                $updS->execute();
-            }
-            $conn->commit();
-            echo json_encode(["success" => true]);
-        } catch (Throwable $e) {
-            $conn->rollback();
-            echo json_encode(["error" => "Gagal update transaksi: " . $e->getMessage()]);
-        }
-        exit();
+        echo json_encode($rows); exit();
     }
 
-    // ================= DELETE TRANSAKSI =================
-    elseif ($action === 'delete') {
-        $id = (int) ($_POST['id'] ?? 0);
-        if ($id <= 0) {
-            echo json_encode(["error" => "ID tidak valid."]);
-            exit();
+    // ---- 4) Ekspor CSV (mengikuti filter yang sama)
+    if ($action === 'exportCSV') {
+        header_remove('Content-Type');
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=riwayat_user.csv');
+
+        $q = trim($_GET['q'] ?? '');
+        $id_jenis = (int)($_GET['id_jenis'] ?? 0);
+
+        $sql = "
+          SELECT t.id_trans, a.nama, js.jenis, t.jumlah_setoran, t.tanggal
+          FROM `transaction` t
+          JOIN account a ON a.id_user=t.id_user
+          JOIN jenis_sampah js ON js.id_jenis=t.id_jenis
+          WHERE t.id_user=?
+        ";
+        $types = "i"; $params = [$id_user];
+        if ($id_jenis > 0) { $sql.=" AND t.id_jenis=? "; $types.="i"; $params[]=$id_jenis; }
+        if ($q !== '') {
+            $like = "%{$q}%";
+            $sql .= " AND (js.jenis LIKE ? OR a.nama LIKE ? OR CAST(t.id_trans AS CHAR) LIKE ?)";
+            $types .= "sss"; array_push($params, $like, $like, $like);
         }
+        $sql .= " ORDER BY t.id_trans DESC";
 
-        $conn->begin_transaction();
-        try {
-            $getOld = $conn->prepare("SELECT id_user, id_jenis, jumlah_setoran FROM `transaction` WHERE id_trans=?");
-            $getOld->bind_param("i", $id);
-            $getOld->execute();
-            $oldRes = $getOld->get_result();
-            if ($oldRes->num_rows === 0) throw new Exception("Transaksi tidak ditemukan.");
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $res = $stmt->get_result();
 
-            $old = $oldRes->fetch_assoc();
-            $id_user = (int)$old['id_user'];
-            $id_jenis = (int)$old['id_jenis'];
-            $jumlah_lama = (int)$old['jumlah_setoran'];
-
-            $harga = $conn->query("SELECT harga FROM jenis_sampah WHERE id_jenis=$id_jenis")->fetch_assoc()['harga'] ?? 0;
-            $nominal_lama = $jumlah_lama * $harga;
-
-            $del = $conn->prepare("DELETE FROM `transaction` WHERE id_trans=?");
-            $del->bind_param("i", $id);
-            $del->execute();
-
-            if ($nominal_lama > 0) {
-                $cekS = $conn->prepare("SELECT id_saldo, saldo FROM saldo WHERE id_user=?");
-                $cekS->bind_param("i", $id_user);
-                $cekS->execute();
-                $resS = $cekS->get_result();
-                if ($resS->num_rows > 0) {
-                    $rowS = $resS->fetch_assoc();
-                    $newSaldo = max(0, (int)$rowS['saldo'] - $nominal_lama);
-                    $updS = $conn->prepare("UPDATE saldo SET saldo=? WHERE id_saldo=?");
-                    $updS->bind_param("ii", $newSaldo, $rowS['id_saldo']);
-                    $updS->execute();
-                }
-            }
-
-            $conn->commit();
-            echo json_encode(["success" => true]);
-        } catch (Throwable $e) {
-            $conn->rollback();
-            echo json_encode(["error" => "Gagal menghapus transaksi: " . $e->getMessage()]);
-        }
-        exit();
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['ID Transaksi','Nama','Jenis Sampah','Jumlah (kg)','Tanggal']);
+        while ($r = $res->fetch_assoc()) fputcsv($out, $r);
+        fclose($out); exit();
     }
 
-    // ================= CREATE USER =================
-    elseif ($action === 'createUser') {
-        $nama   = trim($_POST['nama'] ?? '');
-        $no_hp  = trim($_POST['no_hp'] ?? '');
-        $alamat = trim($_POST['alamat'] ?? '');
-
-        if ($nama === '' || $no_hp === '') {
-            echo json_encode(["error" => "Data user tidak lengkap."]);
-            exit();
-        }
-
-        $cek = $conn->prepare("SELECT id_user FROM account WHERE no_hp=? LIMIT 1");
-        $cek->bind_param("s", $no_hp);
-        $cek->execute();
-        if ($cek->get_result()->num_rows > 0) {
-            echo json_encode(["error" => "No HP sudah terdaftar."]);
-            exit();
-        }
-
-        $password = password_hash("user123", PASSWORD_DEFAULT);
-        $role = "user";
-
-        $ins = $conn->prepare("INSERT INTO account (nama, no_hp, alamat, password, role) VALUES (?, ?, ?, ?, ?)");
-        $ins->bind_param("sssss", $nama, $no_hp, $alamat, $password, $role);
-        if ($ins->execute()) {
-            echo json_encode(["success" => true]);
-        } else {
-            echo json_encode(["error" => "Gagal menambah user: " . $ins->error]);
-        }
-        exit();
+    // ---- 5) Titik peta aktif (dari super admin)
+    if ($action === 'points') {
+        $rows = [];
+        $res = $conn->query("SELECT id,name,type,address,lat,lng FROM location_points WHERE active=1 ORDER BY id DESC");
+        if ($res) $rows = $res->fetch_all(MYSQLI_ASSOC);
+        echo json_encode($rows); exit();
     }
 
-    // ================= READ KATEGORI =================
-    elseif ($action === 'readKategori') {
-        $sql = "SELECT id_kategori, kategori FROM kategori ORDER BY id_kategori ASC";
-        $res = $conn->query($sql);
-        if ($res === false) {
-            echo json_encode(["error" => "Query failed: " . $conn->error]);
-            exit();
-        }
-        $data = $res->fetch_all(MYSQLI_ASSOC);
-        echo json_encode($data);
-        exit();
-    }
+    // ---- 6) Ganti password user
+    if ($action === 'changePassword' && $_SERVER['REQUEST_METHOD']==='POST') {
+        $old = $_POST['old'] ?? '';
+        $new = $_POST['new'] ?? '';
 
-    // ================= CREATE JENIS SAMPAH =================
-    elseif ($action === 'createJenis') {
-        $id_kategori = (int) ($_POST['id_kategori'] ?? 0);
-        $nama_jenis  = trim($_POST['nama_jenis'] ?? '');
-        $harga       = (int) ($_POST['harga'] ?? 0);
-
-        if ($id_kategori <= 0 || $nama_jenis === '' || $harga <= 0) {
-            echo json_encode(["error" => "Data tidak lengkap atau harga tidak valid"]);
-            exit();
+        if (strlen($new) < 6) {
+            echo json_encode(['success'=>false,'error'=>'Minimal 6 karakter']); exit();
         }
 
-        $ins = $conn->prepare("INSERT INTO jenis_sampah (id_kategori, jenis, harga) VALUES (?, ?, ?)");
-        $ins->bind_param("isi", $id_kategori, $nama_jenis, $harga);
+        $stmt = $conn->prepare("SELECT password FROM account WHERE id_user=? LIMIT 1");
+        $stmt->bind_param("i", $id_user);
+        $stmt->execute();
+        $hash = $stmt->get_result()->fetch_assoc()['password'] ?? '';
+        $stmt->close();
 
-        if ($ins->execute()) {
-            echo json_encode(["success" => true]);
-        } else {
-            echo json_encode(["error" => "Gagal menambah jenis sampah: " . $ins->error]);
-        }
-        exit();
+        // jika hash kosong, anggap belum diset (boleh langsung ganti)
+        $ok = ($hash === '') ? true : password_verify($old, $hash);
+        if (!$ok) { echo json_encode(['success'=>false,'error'=>'Password lama salah']); exit(); }
+
+        $newHash = password_hash($new, PASSWORD_DEFAULT);
+        $up = $conn->prepare("UPDATE account SET password=? WHERE id_user=?");
+        $up->bind_param("si", $newHash, $id_user);
+        $ok = $up->execute();
+
+        echo json_encode(['success'=>$ok]); exit();
     }
 
-    // ================= READ USER =================
-    elseif ($action === 'readUser') {
-        $sql = "SELECT id_user, nama, no_hp, alamat, role FROM account ORDER BY id_user ASC";
-        $res = $conn->query($sql);
-        $data = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-        echo json_encode($data);
-        exit();
-    }
-
-    // ================= READ JENIS SAMPAH =================
-    elseif ($action === 'readSampah') {
-        $sql = "SELECT id_jenis, jenis, harga FROM jenis_sampah ORDER BY id_jenis ASC";
-        $res = $conn->query($sql);
-        if ($res === false) {
-            echo json_encode(["error" => "Query failed: " . $conn->error]);
-            exit();
-        }
-        $data = $res->fetch_all(MYSQLI_ASSOC);
-        echo json_encode($data);
-        exit();
-    }
-
-    else {
-        echo json_encode(["error" => "Invalid action"]);
-        exit();
-    }
+    echo json_encode(['error'=>'Invalid action']); exit();
 }
 ?>
-
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin - Bank Sampah Karangsewu</title>
-  <link rel="stylesheet" href="admin.css">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard – Bank Sampah Karangsewu</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="user.css?v=5"/>
 </head>
 <body>
   <!-- Header -->
-  <header>
-    <div class="logo">🌱 Bank Sampah Karangsewu</div>
-    <div class="user" ><h3><?php if(isset($_SESSION['id_user'])): ?>
-      <!-- <div class="user-info"> -->
-          <h3><?= htmlspecialchars($_SESSION['nama']); ?></h3>
-        <!-- </div> --></h3></div>
-      <nav>
-        <?php else: ?>
-          <a href="login.php" class="login-btn">Masuk</a>
-          <a href="register.php" class="register-btn">Daftar</a>
-          <?php endif; ?>
-          <a href="admin.php#home">Home</a>
-          <a href="admin.php#transaksi">Transaksi</a>
-          <a href="admin.php#users">User</a>
-          <a href="admin.php#maps">Peta</a>
-          <a href="admin.php#kontak">Kontak</a>
-          <a href="logout.php" class="btn-logout">Keluar</a>
+  <header class="u-header">
+    <div class="brand">🌿 Bank Sampah Karangsewu</div>
+    <nav class="u-nav">
+      <span class="badge">🔒 Role: User</span>
+      <button id="btnChangePwd" class="btn ghost">Ganti Password</button>
+      <a href="logout.php" class="btn danger">Keluar</a>
     </nav>
   </header>
 
-  <!-- Hero -->
-  <section class="hero" id="home">
-    <h1>Selamat Datang Admin, <?= htmlspecialchars($_SESSION['nama']); ?>!</h1>
-    <p>Ini adalah halaman dashboard khusus admin. Anda dapat memantau dan mengelola transaksi serta user di sini.</p>
-  </section>
-
-<!-- Form Section -->
-<div class="forms-container">
-  <!-- Form Transaksi -->
-  <form id="transaksiForm">
-    <h2>Form Transaksi</h2>
-    <input type="text" id="nama" placeholder="Nama penyetor" required>
-    <select id="jenis" required></select>
-    <input type="number" id="jumlah" placeholder="Jumlah (kg)" required>
-    <button type="submit">Tambah</button>
-  </form>
-
-  <!-- Tambah User -->
-  <form id="userForm">
-    <h2>Tambah User Baru</h2>
-    <input type="text" id="user_nama" placeholder="Nama" required>
-    <input type="text" id="user_hp" placeholder="No HP" required>
-    <input type="text" id="user_alamat" placeholder="Alamat" required>
-    <button type="submit">Tambah User</button>
-  </form>
-
-  <!-- Tambah Jenis Sampah -->
-  <form id="sampahForm">
-  <label for="sampah_kategori">Kategori:</label>
-  <select id="sampah_kategori" required>
-    <option value="">-- Pilih Kategori --</option>
-    <!-- opsi kategori akan diisi JS -->
-  </select>
-
-  <label for="sampah_nama">Nama Jenis Sampah:</label>
-  <input type="text" id="sampah_nama" placeholder="Nama jenis sampah" required>
-
-  <label for="sampah_harga">Harga per kg (Rp):</label>
-  <input type="number" id="sampah_harga" placeholder="Harga" min="1" required>
-
-  <button type="submit">Tambah Jenis Sampah</button>
-</form>
-
-</div>
-
-
-<!-- History -->
-<section class="tables">
-  <!-- Tables Section -->
-    <div>
-      <h2>Daftar User</h2>
-      <table id="userTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nama</th>
-            <th>No HP</th>
-            <th>Alamat</th>
-            <th>Role</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  
-    <div>
-      <h2>Daftar Jenis Sampah</h2>
-      <table id="sampahTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nama Jenis</th>
-            <th>Harga/kg</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+  <main class="u-main">
+    <!-- Welcome -->
+    <div class="welcome glass">
+      Halo, <strong><?= htmlspecialchars($_SESSION['nama']); ?></strong> 👋
+      <span>selamat datang di dashboard Anda.</span>
     </div>
 
-  <h3>Riwayat Transaksi</h3>
-  <table id="riwayat">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nama</th>
-        <th>Jenis Sampah</th>
-        <th>Jumlah (kg)</th>
-        <th>Tanggal</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</section>
+    <!-- Stats -->
+    <section class="stats">
+      <div class="stat">
+        <div class="ic">💰</div>
+        <div>
+          <div class="label">Saldo</div>
+          <div class="num" id="saldoNum">Rp 0</div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="ic">🧾</div>
+        <div>
+          <div class="label">Total Transaksi</div>
+          <div class="num" id="totalNum">0</div>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="ic">🏅</div>
+        <div>
+          <div class="label">Jenis Terbanyak</div>
+          <div class="num" id="topJenis">—</div>
+        </div>
+      </div>
+    </section>
 
-  <footer id="kontak">
-    <p>📍 Desa Karangsewu | 🌐 @banksampahkarangsewu</p>
-    <p>© 2025 Bank Sampah Karangsewu</p>
+    <section class="grid">
+      <!-- Riwayat -->
+      <div class="card">
+        <div class="card-head">
+          <h2>📋 Riwayat Penjualan Sampah</h2>
+          <div class="filters">
+            <div class="search">
+              <input id="q" type="text" placeholder="Cari id/nama/jenis…"/>
+              <button id="clearQ" title="Bersihkan">✕</button>
+            </div>
+            <select id="jenisFilter">
+              <option value="0">Semua Jenis</option>
+            </select>
+            <button id="btnCSV" class="btn">Unduh CSV</button>
+            <button id="btnReset" class="btn ghost">Reset</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="u-table" id="tTrans">
+            <thead>
+              <tr>
+                <th>ID Transaksi</th>
+                <th>Nama</th>
+                <th>Jenis Sampah</th>
+                <th>Jumlah (kg)</th>
+                <th>Tanggal</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="5" class="empty">Memuat…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Peta -->
+      <div class="card">
+        <div class="card-head">
+          <h2>🗺️ Lokasi Pengepul</h2>
+        </div>
+        <div id="map" class="map"></div>
+        <p class="note">Titik diambil dari <code>location_points</code> (Super Admin).</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="u-footer">
+    <div>📍 Desa Karangsewu &nbsp;|&nbsp; 🌐 @banksampahkarangsewu</div>
+    <div>© 2025 Bank Sampah Karangsewu</div>
   </footer>
-      
-<script src="super_admin.js" defer></script>
 
+  <!-- Modal ganti password -->
+  <dialog id="pwdModal" class="modal">
+    <form id="pwdForm" method="dialog" class="modal-body">
+      <h3>Ganti Password</h3>
+      <label>Password lama
+        <input type="password" id="oldPwd" autocomplete="current-password" required/>
+      </label>
+      <label>Password baru
+        <input type="password" id="newPwd" autocomplete="new-password" minlength="6" required/>
+      </label>
+      <div class="actions">
+        <button type="button" id="closePwd" class="btn ghost">Batal</button>
+        <button type="submit" class="btn">Simpan</button>
+      </div>
+      <p id="pwdMsg" class="msg"></p>
+    </form>
+  </dialog>
+
+  <!-- JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const USER_API = 'user.php';
+  </script>
+  <script src="user.js?v=5" defer></script>
 </body>
 </html>

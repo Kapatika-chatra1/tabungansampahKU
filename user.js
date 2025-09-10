@@ -1,103 +1,172 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // ===== STAT dari tabel =====
-    const tbody = document.querySelector('#tabelRiwayat tbody');
-    const rows  = Array.from(tbody.querySelectorAll('tr')).filter(r => r.children.length >= 4);
-    const statTransEl = document.getElementById('stat-transaksi');
-    const statJenisEl = document.getElementById('stat-jenis');
+// user.js
+(() => {
+  const $ = (s, el=document) => el.querySelector(s);
+  const $$ = (s, el=document) => [...el.querySelectorAll(s)];
 
-    const jenisCount = {};
-    let visibleCount = 0;
-    rows.forEach(tr => {
-      const jenis = tr.children[2]?.textContent.trim();
-      if (!jenis) return;
-      visibleCount++;
-      jenisCount[jenis] = (jenisCount[jenis] || 0) + 1;
-    });
-    statTransEl.textContent = visibleCount || 0;
-    statJenisEl.textContent = visibleCount ? Object.entries(jenisCount).sort((a,b)=>b[1]-a[1])[0][0] : '—';
+  const fmtRupiah = n => 'Rp ' + (Number(n)||0).toLocaleString('id-ID');
 
-    // ===== FILTER & SEARCH =====
-    const filterJenis = document.getElementById('filterJenis');
-    const searchInput = document.getElementById('searchInput');
-    const btnReset    = document.getElementById('btnReset');
+  const state = { q:'', id_jenis: 0 };
 
-    const jenisSet = new Set(rows.map(r => r.children[2]?.textContent.trim()).filter(Boolean));
-    [...jenisSet].sort().forEach(j => {
-      const o = document.createElement('option'); o.value=j; o.textContent=j; filterJenis.appendChild(o);
-    });
+  // ===== Fetch helpers
+  async function jget(url){
+    const r = await fetch(url, {credentials:'same-origin'});
+    if(!r.ok) throw new Error(r.status);
+    return r.json();
+  }
 
-    function applyFilter(){
-      const q  = searchInput.value.trim().toLowerCase();
-      const jf = filterJenis.value;
-      let showCount = 0;
-      rows.forEach(tr => {
-        const nama  = tr.children[1]?.textContent.toLowerCase() || '';
-        const jenis = tr.children[2]?.textContent || '';
-        const matchQ = !q || nama.includes(q) || jenis.toLowerCase().includes(q);
-        const matchJ = !jf || jenis === jf;
-        const show = matchQ && matchJ;
-        tr.style.display = show ? '' : 'none';
-        if (show) showCount++;
-      });
-      statTransEl.textContent = showCount;
+  // ===== Stats
+  async function loadStats(){
+    try {
+      const s = await jget(`${USER_API}?action=stats`);
+      $('#saldoNum').textContent = fmtRupiah(s.saldo);
+      $('#totalNum').textContent = s.total ?? 0;
+      $('#topJenis').textContent = s.top ?? '—';
+    } catch(e){ console.error(e); }
+  }
+
+  // ===== Jenis dropdown
+  async function loadJenis(){
+    try {
+      const rows = await jget(`${USER_API}?action=jenisList`);
+      const sel = $('#jenisFilter');
+      const cur = sel.value;
+      sel.innerHTML = `<option value="0">Semua Jenis</option>` + rows.map(r =>
+        `<option value="${r.id_jenis}">${r.jenis}</option>`
+      ).join('');
+      if (cur) sel.value = cur;
+    } catch(e){ console.error(e); }
+  }
+
+  // ===== Transactions table
+  async function loadTrans(){
+    const tbody = $('#tTrans tbody');
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Memuat…</td></tr>`;
+    const url = `${USER_API}?action=transactions&q=${encodeURIComponent(state.q)}&id_jenis=${state.id_jenis}`;
+    try {
+      const rows = await jget(url);
+      if(!rows.length){
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Tidak ada data</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.id_trans}</td>
+          <td>${escapeHtml(r.nama)}</td>
+          <td>${escapeHtml(r.jenis)}</td>
+          <td>${r.jumlah_setoran}</td>
+          <td>${r.tanggal}</td>
+        </tr>
+      `).join('');
+    } catch(e){
+      console.error(e);
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">Gagal memuat</td></tr>`;
     }
-    searchInput.addEventListener('input', applyFilter);
-    filterJenis.addEventListener('change', applyFilter);
-    btnReset.addEventListener('click', () => { searchInput.value=''; filterJenis.value=''; applyFilter(); });
+  }
 
-    // ===== CSV =====
-    document.getElementById('btnDownload').addEventListener('click', () => {
-      const vis = rows.filter(r => r.style.display !== 'none');
-      if (!vis.length) { alert('Tidak ada data untuk diunduh.'); return; }
-      const header = ['ID Transaksi','Nama','Jenis Sampah','Jumlah Setoran'];
-      const csv = [header.join(',')].concat(
-        vis.map(tr => Array.from(tr.children).slice(0,4).map(td => {
-          const t = td.textContent.replace(/\s+/g,' ').trim().replace(/"/g,'""');
-          return `"${t}"`;
-        }).join(','))
-      ).join('\r\n');
-      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = 'riwayat-transaksi.csv'; a.click();
-      URL.revokeObjectURL(a.href);
-    });
+  // ===== CSV
+  function exportCSV(){
+    const url = `${USER_API}?action=exportCSV&q=${encodeURIComponent(state.q)}&id_jenis=${state.id_jenis}`;
+    window.location.href = url;
+  }
 
-    // ===== MAP =====
-    const map = L.map('map').setView([-7.9539772,110.1813977], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution:'© OpenStreetMap contributors'
+  // ===== Map
+  let map, markers;
+  async function initMap(){
+    map = L.map('map', { zoomControl:true }).setView([-7.9539, 110.1813], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
     }).addTo(map);
-    L.marker([-7.9490876,110.1975741]).addTo(map).bindPopup('Titik Bank Sampah Sorogaten');
+    markers = L.layerGroup().addTo(map);
+    await loadPoints();
+  }
+  async function loadPoints(){
+    try{
+      markers.clearLayers();
+      const pts = await jget(`${USER_API}?action=points`);
+      if(!pts.length) return;
+      const group = [];
+      pts.forEach(p => {
+        const m = L.marker([p.lat, p.lng]).bindPopup(
+          `<b>${escapeHtml(p.name)}</b><br>${escapeHtml(p.type)}<br>${escapeHtml(p.address||'')}`
+        );
+        m.addTo(markers);
+        group.push(m);
+      });
+      if(group.length){
+        const fg = L.featureGroup(group);
+        map.fitBounds(fg.getBounds().pad(0.15));
+      }
+    }catch(e){ console.error(e); }
+  }
 
-    // ===== MODAL PASSWORD =====
-    const modalPassword = document.getElementById('modalPassword');
-    document.getElementById('btnOpenPassword').addEventListener('click', ()=> {
-      modalPassword.style.display = 'flex';
-    });
-    document.getElementById('btnClosePassword').addEventListener('click', ()=> {
-      modalPassword.style.display = 'none';
-    });
+  // ===== Change password
+  function bindPasswordModal(){
+    const dlg = $('#pwdModal');
+    $('#btnChangePwd').addEventListener('click', () => dlg.showModal());
+    $('#closePwd').addEventListener('click', () => dlg.close());
 
-    document.getElementById('formPassword').addEventListener('submit', async e => {
+    $('#pwdForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = e.target;
-      const data = new FormData(form);
-      const msgEl = document.getElementById('msgPassword');
-      msgEl.style.color = "black";
-      msgEl.textContent = "⏳ Memproses...";
-
-      try {
-        const res = await fetch('ganti_password.php', { method:'POST', body:data });
-        const result = await res.json();
-        msgEl.style.color = result.success ? "green" : "red";
-        msgEl.textContent = result.message;
-        if(result.success){
-          form.reset();
-          setTimeout(()=> modalPassword.style.display='none', 1500);
+      const fd = new FormData();
+      fd.append('old', $('#oldPwd').value);
+      fd.append('new', $('#newPwd').value);
+      try{
+        const r = await fetch(`${USER_API}?action=changePassword`, { method:'POST', body:fd, credentials:'same-origin' });
+        const j = await r.json();
+        const msg = $('#pwdMsg');
+        if(j.success){
+          msg.textContent = 'Password berhasil diganti ✅';
+          msg.className = 'msg ok';
+          setTimeout(()=> dlg.close(), 800);
+          e.target.reset();
+        } else {
+          msg.textContent = j.error || 'Gagal ganti password';
+          msg.className = 'msg err';
         }
-      } catch(err){
-        msgEl.style.color = "red";
-        msgEl.textContent = "❌ Terjadi kesalahan koneksi.";
+      }catch(err){
+        const msg = $('#pwdMsg'); msg.textContent='Gagal jaringan'; msg.className='msg err';
       }
     });
+  }
+
+  // ===== Utils
+  function escapeHtml(s){ return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+  function debounce(fn, ms=280){
+    let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); };
+  }
+
+  // ===== Bind UI
+  function bindFilters(){
+    const onSearch = debounce(() => {
+      state.q = $('#q').value.trim();
+      loadTrans();
+    }, 260);
+
+    $('#q').addEventListener('input', onSearch);
+    $('#clearQ').addEventListener('click', () => { $('#q').value=''; state.q=''; loadTrans(); });
+
+    $('#jenisFilter').addEventListener('change', () => {
+      state.id_jenis = parseInt($('#jenisFilter').value,10)||0;
+      loadTrans();
+    });
+
+    $('#btnCSV').addEventListener('click', exportCSV);
+    $('#btnReset').addEventListener('click', () => {
+      state.q=''; state.id_jenis=0;
+      $('#q').value=''; $('#jenisFilter').value='0';
+      loadTrans();
+    });
+  }
+
+  // ===== Init
+  document.addEventListener('DOMContentLoaded', async () => {
+    bindFilters();
+    bindPasswordModal();
+    await Promise.all([loadStats(), loadJenis()]);
+    await loadTrans();
+    await initMap();
   });
+})();
