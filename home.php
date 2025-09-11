@@ -1,26 +1,48 @@
 <?php 
 require 'koneksi.php';
-// === HITUNG TOTAL STATISTIK ===
+
+/* ===== API publik: titik peta (ambil dari location_points active=1) ===== */
+if (isset($_GET['action']) && $_GET['action'] === 'getPoints') {
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store');
+  $rows = [];
+  if ($rs = $conn->query("SELECT name, type, phone, address, lat, lng FROM location_points WHERE active=1 ORDER BY id DESC")) {
+    while ($r = $rs->fetch_assoc()) {
+      $rows[] = [
+        'name'    => (string)($r['name'] ?? ''),
+        'type'    => (string)($r['type'] ?? ''),
+        'phone'   => (string)($r['phone'] ?? ''),
+        'address' => (string)($r['address'] ?? ''),
+        'lat'     => (float)($r['lat'] ?? 0),
+        'lng'     => (float)($r['lng'] ?? 0),
+      ];
+    }
+  }
+  echo json_encode($rows, JSON_UNESCAPED_UNICODE);
+  exit;
+}
+
+/* ===== HITUNG TOTAL STATISTIK (untuk hero) ===== */
 
 // total kg sampah terkelola
 $totalKg = 0;
 if ($res = $conn->query("SELECT SUM(jumlah_setoran) AS total FROM `transaction`")) {
-    $row = $res->fetch_assoc();
-    $totalKg = (int)($row['total'] ?? 0);
+  $row = $res->fetch_assoc();
+  $totalKg = (int)($row['total'] ?? 0);
 }
 
 // total transaksi
 $totalTransaksi = 0;
 if ($res = $conn->query("SELECT COUNT(*) AS total FROM `transaction`")) {
-    $row = $res->fetch_assoc();
-    $totalTransaksi = (int)($row['total'] ?? 0);
+  $row = $res->fetch_assoc();
+  $totalTransaksi = (int)($row['total'] ?? 0);
 }
 
-// pengepul aktif (jumlah user unik yang sudah setor)
+// nasabah/pengepul aktif (user unik yang sudah setor)
 $totalPengepul = 0;
 if ($res = $conn->query("SELECT COUNT(DISTINCT id_user) AS total FROM `transaction`")) {
-    $row = $res->fetch_assoc();
-    $totalPengepul = (int)($row['total'] ?? 0);
+  $row = $res->fetch_assoc();
+  $totalPengepul = (int)($row['total'] ?? 0);
 }
 ?>
 <!DOCTYPE html>
@@ -93,27 +115,28 @@ if ($res = $conn->query("SELECT COUNT(DISTINCT id_user) AS total FROM `transacti
         <h1>Kelola Sampah, Wujudkan Desa <span class="grad">Bersih</span> & <span class="grad">Sejahtera</span></h1>
         <p>Bersama masyarakat Karangsewu, kita ciptakan lingkungan sehat dan bernilai ekonomi melalui pengelolaan sampah yang mudah, transparan, dan menguntungkan.</p>
 
-        <!-- 3 tombol -->
+        <!-- CTA -->
         <div class="hero-cta">
           <a href="login.php" class="btn btn-primary ripple">Masuk</a>
-          <!-- <a href="login.php" class="btn btn-ghost ripple">Masuk</a> -->
           <a href="#maps" class="btn btn-outline ripple">Lihat Peta</a>
         </div>
+
         <!-- stats -->
-<div class="stats">
-  <div class="stat reveal" style="--d:.0s">
-    <div class="num" data-count="<?= $totalKg ?>">0</div>
-    <div class="label">Kg Sampah Terkelola</div>
-  </div>
-  <div class="stat reveal" style="--d:.1s">
-    <div class="num" data-count="<?= $totalTransaksi ?>">0</div>
-    <div class="label">Transaksi</div>
-  </div>
-  <div class="stat reveal" style="--d:.2s">
-    <div class="num" data-count="<?= $totalPengepul ?>">0</div>
-    <div class="label">Nasabah Aktif</div>
-  </div>
-</div>
+        <div class="stats">
+          <div class="stat reveal" style="--d:.0s">
+            <div class="num" data-count="<?= $totalKg ?>">0</div>
+            <div class="label">Kg Sampah Terkelola</div>
+          </div>
+          <div class="stat reveal" style="--d:.1s">
+            <div class="num" data-count="<?= $totalTransaksi ?>">0</div>
+            <div class="label">Transaksi</div>
+          </div>
+          <div class="stat reveal" style="--d:.2s">
+            <div class="num" data-count="<?= $totalPengepul ?>">0</div>
+            <div class="label">Nasabah Aktif</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Slider -->
       <div class="hero-slider reveal">
@@ -161,6 +184,7 @@ if ($res = $conn->query("SELECT COUNT(DISTINCT id_user) AS total FROM `transacti
     <div class="container about-grid">
       <div class="about-media reveal">
         <div class="img big" style="background-image:url('img/tambak.JPG')"></div>
+        <div class="img small" style="background-image:url('img/gambar3.jpg')"></div>
         <div class="img small" style="background-image:url('img/pabrikgula.jpg')"></div>
       </div>
       <div class="about-text reveal">
@@ -198,7 +222,6 @@ if ($res = $conn->query("SELECT COUNT(DISTINCT id_user) AS total FROM `transacti
       <p>Gabung sekarang dan kelola sampah dengan cara yang mudah dan menguntungkan.</p>
       <div class="cta-actions">
         <a href="login.php" class="btn btn-primary ripple">Mulai Gabung</a>
-        <a href="login.php" class="btn btn-ghost ripple">Masuk</a>
       </div>
     </div>
   </section>
@@ -233,6 +256,6 @@ if ($res = $conn->query("SELECT COUNT(DISTINCT id_user) AS total FROM `transacti
 
   <!-- Leaflet + App JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="home.js?v=5"></script>
+  <script src="home.js?v=6"></script>
 </body>
 </html>

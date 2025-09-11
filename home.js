@@ -15,7 +15,7 @@ window.addEventListener('scroll', () => {
 });
 toTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-// Mobile menu (FIX: jangan andalkan display:none)
+// Mobile menu (display selalu flex, sembunyi via opacity/visibility)
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 const mobileMenu       = document.getElementById('mobileMenu');
 const mobileClose      = document.getElementById('mobileMenuClose');
@@ -104,22 +104,51 @@ document.querySelectorAll('.stat .num').forEach(el => {
   obs.observe(el);
 });
 
-// Leaflet Map
+// Leaflet Map (ambil titik dari DB via home.php?action=getPoints)
 (function initMap(){
   const mapEl = document.getElementById('map');
   if (!mapEl) return;
 
-  const map = L.map('map', { scrollWheelZoom:false }).setView([-7.9539772, 110.1813977], 11);
+  const defaultCenter = [-7.9539772, 110.1813977];
+  const defaultZoom   = 11;
+
+  const map = L.map('map', { scrollWheelZoom:false }).setView(defaultCenter, defaultZoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 20
   }).addTo(map);
 
-  const points = [
-    { name:'Bank Sampah Sorogaten',  coord:[-7.9490876,110.1975741] },
-    { name:'Pengepul Karangsewu',    coord:[-7.965,110.170] },
-    { name:'TPS Terpadu (contoh)',   coord:[-7.941,110.190] },
-  ];
-  points.forEach(p => L.marker(p.coord).addTo(map).bindPopup(p.name));
+  const layer  = L.layerGroup().addTo(map);
+  const bounds = L.latLngBounds();
+
+  const esc = s => String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+  fetch('home.php?action=getPoints', { credentials:'same-origin' })
+    .then(r => r.json())
+    .then(rows => {
+      if (!Array.isArray(rows) || rows.length === 0) return;
+
+      rows.forEach(p => {
+        const lat = Number(p.lat), lng = Number(p.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const html = `
+          <b>${esc(p.name || '')}</b><br/>
+          ${p.type ? esc(p.type) + '<br/>' : ''}
+          ${p.address ? esc(p.address) + '<br/>' : ''}
+          ${p.phone ? '<small>☎ ' + esc(p.phone) + '</small><br/>' : ''}
+          <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${lat},${lng}">Buka di Google Maps</a>
+        `;
+        L.marker([lat,lng]).addTo(layer).bindPopup(html);
+        bounds.extend([lat,lng]);
+      });
+
+      // Jika ada titik, sesuaikan tampilan; jika tidak, tetap default
+      if (bounds.isValid()) map.fitBounds(bounds.pad(0.2));
+    })
+    .catch(console.error);
 })();
 
 // Smooth scroll untuk anchor biasa
